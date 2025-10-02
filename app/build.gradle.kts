@@ -56,8 +56,10 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
     
-    // ViewModel
+    // ViewModel & LiveData
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.compose.runtime.livedata)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

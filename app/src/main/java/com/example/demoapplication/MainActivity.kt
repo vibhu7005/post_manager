@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,19 +27,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
+import com.example.demoapplication.data.repository.PostRepositoryImpl
 import com.example.demoapplication.ui.theme.DemoApplicationTheme
 import com.example.demoapplication.ui.viewmodel.PostViewModel
+import com.example.demoapplication.ui.viewmodel.PostUiState
+import com.example.demoapplication.ui.viewmodel.ViewModelFactory
 
 class MainActivity : ComponentActivity() {
+    
+    private val postViewModel: PostViewModel by viewModels {
+        ViewModelFactory { PostViewModel(PostRepositoryImpl()) }
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             DemoApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PostListScreen(modifier = Modifier.padding(innerPadding))
+                    PostListScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        viewModel = postViewModel
+                    )
                 }
             }
         }
@@ -48,9 +62,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun PostListScreen(
     modifier: Modifier = Modifier,
-    viewModel: PostViewModel = viewModel()
+    viewModel: PostViewModel = viewModel(
+        factory = ViewModelFactory { PostViewModel(PostRepositoryImpl()) }
+    )
 ) {
-    val uiState = viewModel.uiState.value
+    val uiState by viewModel.uiState.observeAsState(initial = PostUiState())
     
     Box(modifier = modifier.fillMaxSize()) {
         when {
