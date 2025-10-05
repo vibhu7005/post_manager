@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepository
-import com.example.demoapplication.data.repository.PostRepositoryImpl
 import kotlinx.coroutines.launch
 
 data class PostUiState(
@@ -16,7 +15,7 @@ data class PostUiState(
 )
 
 class PostViewModel(
-    private val repository: PostRepository = PostRepositoryImpl()
+    private val repository: PostRepository
 ) : ViewModel() {
     
     private val _uiState = MutableLiveData(PostUiState())
