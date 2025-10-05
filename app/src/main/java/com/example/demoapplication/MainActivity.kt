@@ -40,7 +40,7 @@ import com.example.demoapplication.ui.viewmodel.ViewModelFactory
 class MainActivity : ComponentActivity() {
     
     private val postViewModel: PostViewModel by viewModels {
-        ViewModelFactory { PostViewModel(PostRepositoryImpl()) }
+        ViewModelFactory { PostViewModel(PostRepositoryImpl) }
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
 fun PostListScreen(
     modifier: Modifier = Modifier,
     viewModel: PostViewModel = viewModel(
-        factory = ViewModelFactory { PostViewModel(PostRepositoryImpl()) }
+        factory = ViewModelFactory { PostViewModel(PostRepositoryImpl) }
     )
 ) {
     val uiState by viewModel.uiState.observeAsState(initial = PostUiState())
