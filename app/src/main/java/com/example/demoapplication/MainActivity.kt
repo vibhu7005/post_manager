@@ -29,6 +29,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
@@ -47,14 +51,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DemoApplicationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PostListScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        viewModel = postViewModel
-                    )
-                }
-            }
+            Structure()
         }
     }
 }
@@ -140,17 +137,36 @@ fun PostItem(post: Post) {
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PostItemPreview() {
-    DemoApplicationTheme {
-        PostItem(
-            post = Post(
-                id = 1,
-                userId = 1,
-                title = "Sample Post Title",
-                body = "This is a sample post body that demonstrates how the post will look in the UI."
-            )
-        )
+@Preview(showBackground = true, showSystemUi = true)
+fun Structure() {
+    Column (modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally){
+        var count by remember { mutableIntStateOf(0) }
+        Text("the count is $count")
+        MyButton  {count++ }
+        Button(onClick = { count++ }) {
+            Text("Add one")
+        }
     }
 }
+
+@Composable
+fun MyButton(onClick: ()-> Unit) {
+    onClick.invoke()
+}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun PostItemPreview() {
+//    DemoApplicationTheme {
+//        PostItem(
+//            post = Post(
+//                id = 1,
+//                userId = 1,
+//                title = "Sample Post Title",
+//                body = "This is a sample post body that demonstrates how the post will look in the UI."
+//            )
+//        )
+//    }
+//}
