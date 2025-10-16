@@ -1,6 +1,7 @@
 package com.example.demoapplication
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +35,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
@@ -40,6 +44,7 @@ import com.example.demoapplication.ui.theme.DemoApplicationTheme
 import com.example.demoapplication.ui.viewmodel.PostViewModel
 import com.example.demoapplication.ui.viewmodel.PostUiState
 import com.example.demoapplication.ui.viewmodel.ViewModelFactory
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     
@@ -140,13 +145,29 @@ fun PostItem(post: Post) {
 @Composable
 @Preview(showBackground = true, showSystemUi = true)
 fun Structure() {
-    Column (modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally){
-        var count by remember { mutableIntStateOf(0) }
-        Text("the count is $count")
-        MyButton  {count++ }
-        Button(onClick = { count++ }) {
-            Text("Add one")
+    Column {
+        var name = remember { mutableStateOf("John") }
+        
+        Text("Name: $name")
+        AutoGreeter(name = name)
+        
+        Button(onClick = { name.value = if (name.value == "John") "Jane" else "John" }) {
+            Text("Toggle Name")
+        }
+    }
+}
+
+@Composable
+fun AutoGreeter(name: MutableState<String>) {
+//    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+        Text(name.value)
+//    }
+    val currentName by rememberUpdatedState(name)
+    
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(2000)
+            Log.d("MainActivity", "Hello ${name.value}!") // Always uses latest name
         }
     }
 }
