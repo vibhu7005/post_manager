@@ -1,6 +1,9 @@
 package com.example.demoapplication
 
+import android.content.ContentValues.TAG
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,137 +47,158 @@ import com.example.demoapplication.ui.theme.DemoApplicationTheme
 import com.example.demoapplication.ui.viewmodel.PostViewModel
 import com.example.demoapplication.ui.viewmodel.PostUiState
 import com.example.demoapplication.ui.viewmodel.ViewModelFactory
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.delay
+import okhttp3.internal.http2.Http2Reader
+import kotlin.uuid.Uuid.Companion.random
 
 class MainActivity : ComponentActivity() {
-    
+
+    val buttonText = mutableStateOf("");
+
     private val postViewModel: PostViewModel by viewModels {
         ViewModelFactory { PostViewModel(PostRepositoryImpl) }
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        executeButtonText();
         setContent {
             Structure()
         }
     }
-}
 
-@Composable
-fun PostListScreen(
-    modifier: Modifier = Modifier,
-    viewModel: PostViewModel = viewModel(
-        factory = ViewModelFactory { PostViewModel(PostRepositoryImpl) }
-    )
-) {
-    val uiState by viewModel.uiState.observeAsState(initial = PostUiState())
-    
-    Box(modifier = modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+    private fun executeButtonText() {
+        Thread {
+            while (true) {
+                buttonText.value = Math.random().toString()
+            }
+        }.start()
+    }
+
+
+    @Composable
+    fun PostListScreen(
+        modifier: Modifier = Modifier,
+        viewModel: PostViewModel = viewModel(
+            factory = ViewModelFactory { PostViewModel(PostRepositoryImpl) }
+        )
+    ) {
+        val uiState by viewModel.uiState.observeAsState(initial = PostUiState())
+
+        Box(modifier = modifier.fillMaxSize()) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                uiState.errorMessage != null -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "Error: ${uiState.errorMessage}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(onClick = { viewModel.retry() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+                    ) {
+                        items(uiState.posts) { post ->
+                            PostItem(post = post)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun PostItem(post: Post) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = post.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "User ID: ${post.userId}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                Text(
+                    text = post.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
-            
-            uiState.errorMessage != null -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "Error: ${uiState.errorMessage}",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.retry() }) {
-                        Text("Retry")
-                    }
+        }
+    }
+
+    @Composable
+    @Preview(showBackground = true, showSystemUi = true)
+    fun Structure() {
+        Column {
+//        var name = remember { mutableStateOf("John") }
+//
+//        Text("Name: $name")
+//        AutoGreeter(name = name)
+
+            Button(onClick = {
+                val runnable = Runnable {
+                    Log.d(TAG, "Runnable executed")
                 }
-            }
-            
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
-                ) {
-                    items(uiState.posts) { post ->
-                        PostItem(post = post)
-                    }
-                }
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed(runnable, 4000)
+            }) {
+                Text(buttonText.value)
             }
         }
     }
-}
 
-@Composable
-fun PostItem(post: Post) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = post.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = "User ID: ${post.userId}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            Text(
-                text = post.body,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-    }
-}
-
-@Composable
-@Preview(showBackground = true, showSystemUi = true)
-fun Structure() {
-    Column {
-        var name = remember { mutableStateOf("John") }
-        
-        Text("Name: $name")
-        AutoGreeter(name = name)
-        
-        Button(onClick = { name.value = if (name.value == "John") "Jane" else "John" }) {
-            Text("Toggle Name")
-        }
-    }
-}
-
-@Composable
-fun AutoGreeter(name: MutableState<String>) {
+    @Composable
+    fun AutoGreeter(name: MutableState<String>) {
 //    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
         Text(name.value)
 //    }
-    val currentName by rememberUpdatedState(name)
-    
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(2000)
-            Log.d("MainActivity", "Hello ${name.value}!") // Always uses latest name
+        val currentName by rememberUpdatedState(name)
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(2000)
+                Log.d("MainActivity", "Hello ${name.value}!") // Always uses latest name
+            }
         }
     }
-}
 
-@Composable
-fun MyButton(onClick: ()-> Unit) {
-    onClick.invoke()
+    @Composable
+    fun MyButton(onClick: () -> Unit) {
+        onClick.invoke()
+    }
 }
 
 //@Preview(showBackground = true)
