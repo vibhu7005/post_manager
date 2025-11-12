@@ -40,8 +40,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
-import com.example.demoapplication.service.DownloadThread
-import com.example.demoapplication.service.DownlodService
 import com.example.demoapplication.ui.viewmodel.PostViewModel
 import com.example.demoapplication.ui.viewmodel.PostUiState
 import com.example.demoapplication.ui.viewmodel.ViewModelFactory
@@ -59,15 +57,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         executeButtonText()
-
-        val downloadThread = DownloadThread()
-        downloadThread.start()
-        Thread.sleep(300)
-        val message = Message.obtain()
-        message.obj = "dfd"
-        downloadThread.service?.sendMessage(message)
-
-
 
         setContent {
             Structure()
