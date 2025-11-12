@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
+import com.example.demoapplication.service.DownloadThread
 import com.example.demoapplication.ui.viewmodel.PostViewModel
 import com.example.demoapplication.ui.viewmodel.PostUiState
 import com.example.demoapplication.ui.viewmodel.ViewModelFactory
@@ -47,7 +48,11 @@ import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
-    val buttonText = mutableStateOf("");
+    val buttonText = mutableStateOf("")
+
+    val downloadThread = DownloadThread()
+
+    val songList = listOf<String>("song1","song2","song3")
 
     private val postViewModel: PostViewModel by viewModels {
         ViewModelFactory { PostViewModel(PostRepositoryImpl) }
@@ -57,7 +62,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         executeButtonText()
-
+        downloadThread.start()
         setContent {
             Structure()
         }
@@ -159,11 +164,12 @@ class MainActivity : ComponentActivity() {
 //        AutoGreeter(name = name)
 
             Button(onClick = {
-                val runnable = Runnable {
-                    Log.d(TAG, "Runnable executed")
+                Log.d(AppConstants.TAG, "Button cliked")
+                for (song in songList) {
+                    val message = Message.obtain()
+                    message.obj = song
+                    downloadThread.mHandler.sendMessage(message)
                 }
-                val handler = Handler(Looper.getMainLooper())
-                handler.postDelayed(runnable, 4000)
             }) {
                 Text(buttonText.value)
             }
