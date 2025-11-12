@@ -41,10 +41,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
 import com.example.demoapplication.service.DownloadThread
+import com.example.demoapplication.service.Worker
 import com.example.demoapplication.ui.viewmodel.PostViewModel
 import com.example.demoapplication.ui.viewmodel.PostUiState
 import com.example.demoapplication.ui.viewmodel.ViewModelFactory
 import kotlinx.coroutines.delay
+import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 
 class MainActivity : ComponentActivity() {
 
@@ -164,15 +169,23 @@ class MainActivity : ComponentActivity() {
 //        AutoGreeter(name = name)
 
             Button(onClick = {
-                Log.d(AppConstants.TAG, "Button cliked")
-                for (song in songList) {
-                    val message = Message.obtain()
-                    message.obj = song
-                    downloadThread.mHandler.sendMessage(message)
-                }
+                doWork()
+//                Log.d(AppConstants.TAG, "Button cliked")
+//                for (song in songList) {
+//                    val message = Message.obtain()
+//                    message.obj = song
+//                    downloadThread.mHandler.sendMessage(message)
+//                }
             }) {
                 Text(buttonText.value)
             }
+        }
+    }
+
+    fun doWork() {
+        val service = Executors.newFixedThreadPool(5) as ThreadPoolExecutor
+        for (i in 1..10) {
+            service.execute(Worker(i))
         }
     }
 
