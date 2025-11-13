@@ -172,7 +172,6 @@ class MainActivity : ComponentActivity() {
 
             Button(onClick = {
                 startMusicDownload()
-                Thread.sleep(500)
 //                Log.d(AppConstants.TAG, "Button cliked")
 //                for (song in songList) {
 //                    val message = Message.obtain()

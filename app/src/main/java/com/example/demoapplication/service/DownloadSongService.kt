@@ -8,8 +8,6 @@ import com.example.demoapplication.AppConstants
 import java.security.Provider
 
 class DownloadSongService : Service() {
-
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val songName = intent?.getStringExtra("MUSIC_KEY")
         downloadSong(songName.orEmpty())
@@ -18,8 +16,11 @@ class DownloadSongService : Service() {
 
 
     private fun downloadSong(songName : String) {
-        Thread.sleep(6000)
-        Log.d(AppConstants.TAG, "downloadedSong: $songName")
+        Thread {
+            Log.d(AppConstants.TAG, "downloadSong started: $songName")
+            Thread.sleep(6000)
+            Log.d(AppConstants.TAG, "downloadedSong: $songName")
+        }.start()
     }
 
 
