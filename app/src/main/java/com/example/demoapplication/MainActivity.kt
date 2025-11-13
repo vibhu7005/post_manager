@@ -1,6 +1,7 @@
 package com.example.demoapplication
 
 import android.content.ContentValues.TAG
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -40,6 +41,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
+import com.example.demoapplication.service.DownloadSongService
 import com.example.demoapplication.service.DownloadThread
 import com.example.demoapplication.service.Worker
 import com.example.demoapplication.ui.viewmodel.PostViewModel
@@ -169,7 +171,8 @@ class MainActivity : ComponentActivity() {
 //        AutoGreeter(name = name)
 
             Button(onClick = {
-                doWork()
+                startMusicDownload()
+                Thread.sleep(500)
 //                Log.d(AppConstants.TAG, "Button cliked")
 //                for (song in songList) {
 //                    val message = Message.obtain()
@@ -180,6 +183,15 @@ class MainActivity : ComponentActivity() {
                 Text(buttonText.value)
             }
         }
+    }
+
+    fun startMusicDownload() {
+        for (song in songList) {
+            val intent = Intent(this, DownloadSongService::class.java)
+            intent.putExtra("MUSIC_KEY", song)
+            startService(intent)
+        }
+
     }
 
     fun doWork() {
