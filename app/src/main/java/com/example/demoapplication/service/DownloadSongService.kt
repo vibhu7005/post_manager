@@ -5,8 +5,9 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import com.example.demoapplication.AppConstants
+import com.example.demoapplication.AppConstants.TAG
 import java.security.Provider
-
+//started service
 class DownloadSongService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val songName = intent?.getStringExtra("MUSIC_KEY")
@@ -27,5 +28,10 @@ class DownloadSongService : Service() {
 
     override fun onBind(p0: Intent?): IBinder? {
         return null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy: ")
     }
 }

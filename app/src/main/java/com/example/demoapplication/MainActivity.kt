@@ -190,7 +190,12 @@ class MainActivity : ComponentActivity() {
             intent.putExtra("MUSIC_KEY", song)
             startService(intent)
         }
+        stopService()
+    }
 
+    fun stopService() {
+        val intent = Intent(this, DownloadSongService::class.java)
+        stopService(intent)
     }
 
     fun doWork() {
