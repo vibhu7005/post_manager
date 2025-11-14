@@ -12,7 +12,8 @@ class DownloadHandler(looper: Looper) : Handler(looper) {
     }
 
     private fun downloadSong(msg: Message) {
+        Log.d(TAG, "download started for ${msg.obj}")
         Thread.sleep(3000)
-        Log.d(TAG, "downloadCompleted for ${msg.obj}")
+        Log.d(TAG, "download Completed for ${msg.obj}")
     }
 }
