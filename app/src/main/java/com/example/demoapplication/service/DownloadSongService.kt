@@ -23,7 +23,7 @@ class DownloadSongService : Service() {
         val msg = Message.obtain()
         msg.obj = songName
         thread.mHandler.sendMessage(msg)
-        return START_REDELIVER_INTENT
+        return START_STICKY
     }
 
     override fun onBind(p0: Intent?): IBinder? {
