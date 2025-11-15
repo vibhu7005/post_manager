@@ -1,11 +1,13 @@
 package com.example.demoapplication
 
+import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
+import android.os.ResultReceiver
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -188,6 +190,7 @@ class MainActivity : ComponentActivity() {
         for (song in songList) {
             val intent = Intent(this, DownloadSongService::class.java)
             intent.putExtra("MUSIC_KEY", song)
+            intent.putExtra(Intent.EXTRA_RESULT_RECEIVER, MyResultReceiver())
             startService(intent)
         }
     }
@@ -218,6 +221,13 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MyButton(onClick: () -> Unit) {
         onClick.invoke()
+    }
+}
+
+class MyResultReceiver : ResultReceiver(Handler(Looper.getMainLooper())) {
+
+    override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+        Log.d(AppConstants.TAG, "main activity ${resultData?.getString("downloadStatus")}")
     }
 }
 
