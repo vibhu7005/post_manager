@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
     val buttonText = mutableStateOf("")
 
-    val downloadThread = DownloadThread()
+//    val downloadThread = DownloadThread()
 
     val songList = listOf<String>("song1","song2","song3")
 
@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         executeButtonText()
-        downloadThread.start()
+//        downloadThread.start()
         setContent {
             Structure()
         }
