@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.compose.runtime.livedata)
+    implementation(libs.androidx.localbroadcastmanager)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

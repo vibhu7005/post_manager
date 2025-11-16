@@ -24,7 +24,7 @@ class DownloadSongService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "falg = $flags:")
         val songName = intent?.getStringExtra("MUSIC_KEY")
-        thread.mHandler.setResultReceiver(intent?.getParcelableExtra(Intent.EXTRA_RESULT_RECEIVER) as ResultReceiver?)
+        thread.mHandler.setContext(applicationContext)
         val msg = Message.obtain()
         msg.obj = songName
         msg.arg1 = startId

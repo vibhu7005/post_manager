@@ -1,8 +1,11 @@
 package com.example.demoapplication
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +19,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,6 +45,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
 import com.example.demoapplication.service.DownloadSongService
@@ -59,6 +64,13 @@ class MainActivity : ComponentActivity() {
 
     val buttonText = mutableStateOf("")
 
+    val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            Log.d(AppConstants.TAG + "main", "onReceive: ${p1?.getStringExtra("MESSAGE")} ")
+        }
+
+    }
+
 //    val downloadThread = DownloadThread()
 
     val songList = listOf<String>("song1","song2","song3")
@@ -75,6 +87,20 @@ class MainActivity : ComponentActivity() {
         setContent {
             Structure()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver,
+            IntentFilter().apply {
+                addAction("DOWNLOAD_SERVICE")
+            })
+    }
+
+
+    override fun onStop() {
+        super.onStop()
+        unregisterReceiver(broadcastReceiver)
     }
 
     private fun executeButtonText() {
@@ -119,7 +145,7 @@ class MainActivity : ComponentActivity() {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+                        contentPadding = PaddingValues(16.dp)
                     ) {
                         items(uiState.posts) { post ->
                             PostItem(post = post)
