@@ -12,9 +12,13 @@ import com.example.demoapplication.AppConstants.TAG
 import com.example.demoapplication.MainActivity
 
 //started service
-class DownloadSongService : IntentService("DownloadSongService") {
+class DownloadSongService() : IntentService("DownloadSongService") {
     lateinit var thread : DownloadThread
     private var latestStartId = 0
+
+    init {
+        setIntentRedelivery(true)
+    }
 
     override fun onCreate() {
         Log.d(TAG, "onCreate")
