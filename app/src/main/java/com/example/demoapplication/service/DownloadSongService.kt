@@ -3,6 +3,7 @@ package com.example.demoapplication.service
 import android.app.IntentService
 import android.app.Service
 import android.content.Intent
+import android.os.Binder
 import android.os.IBinder
 import android.os.Message
 import android.os.ResultReceiver
@@ -12,12 +13,20 @@ import com.example.demoapplication.AppConstants.TAG
 import com.example.demoapplication.MainActivity
 
 //started service
-class DownloadSongService() : IntentService("DownloadSongService") {
+class MusicPlayerService() : Service() {
     lateinit var thread : DownloadThread
     private var latestStartId = 0
+    private val binder = MyBinderService()
 
-    init {
-        setIntentRedelivery(true)
+    inner class MyBinderService : Binder() {
+        fun getService(): MusicPlayerService {
+            return this@MusicPlayerService
+        }
+    }
+    override fun onBind(p0: Intent?): IBinder? {
+        val songName = p0?.getStringExtra("MUSIC_KEY")
+        downloadSong(songName ?: "")
+        return binder
     }
 
     override fun onCreate() {
@@ -30,9 +39,6 @@ class DownloadSongService() : IntentService("DownloadSongService") {
 
 
 
-
-
-
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy: ")
@@ -40,13 +46,8 @@ class DownloadSongService() : IntentService("DownloadSongService") {
 
     private fun downloadSong(msg: String) {
         Log.d(TAG, "download started for ${msg}")
-        Thread.sleep(3000)
+        Thread.sleep(1000)
         Log.d(TAG, "download Completed for ${msg}")
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onHandleIntent(intent: Intent?) {
-        val songName = intent?.getStringExtra("MUSIC_KEY")
-        downloadSong(songName?:"")
-    }
 }

@@ -13,7 +13,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.demoapplication.AppConstants.TAG
 
 class DownloadHandler(looper: Looper) : Handler(looper) {
-    private lateinit var service: DownloadSongService
+    private lateinit var service: MusicPlayerService
     private var mContext : Context? = null
 
     override fun handleMessage(msg: Message) {
@@ -21,7 +21,7 @@ class DownloadHandler(looper: Looper) : Handler(looper) {
     }
 
 
-    fun setService(downloadService: DownloadSongService) {
+    fun setService(downloadService: MusicPlayerService) {
         service = downloadService
     }
 

@@ -2,12 +2,15 @@ package com.example.demoapplication
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.ResultReceiver
@@ -48,8 +51,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.demoapplication.data.model.Post
 import com.example.demoapplication.data.repository.PostRepositoryImpl
-import com.example.demoapplication.service.DownloadSongService
 import com.example.demoapplication.service.DownloadThread
+import com.example.demoapplication.service.MusicPlayerService
 import com.example.demoapplication.service.Worker
 import com.example.demoapplication.ui.viewmodel.PostViewModel
 import com.example.demoapplication.ui.viewmodel.PostUiState
@@ -73,10 +76,24 @@ class MainActivity : ComponentActivity() {
 
 //    val downloadThread = DownloadThread()
 
-    val songList = listOf<String>("song1","song2","song3")
+    val songList = listOf<String>("song1", "song2", "song3")
 
     private val postViewModel: PostViewModel by viewModels {
         ViewModelFactory { PostViewModel(PostRepositoryImpl) }
+    }
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(
+            p0: ComponentName?,
+            p1: IBinder?
+        ) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            TODO("Not yet implemented")
+        }
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,7 +108,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver,
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            broadcastReceiver,
             IntentFilter().apply {
                 addAction("DOWNLOAD_SERVICE")
             })
@@ -101,10 +119,11 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         unregisterReceiver(broadcastReceiver)
+        unbindService(serviceConnection)
     }
 
     private fun executeButtonText() {
-       buttonText.value = "Press"
+        buttonText.value = "Press"
     }
 
 
@@ -214,10 +233,10 @@ class MainActivity : ComponentActivity() {
 
     fun startMusicDownload() {
         for (song in songList) {
-            val intent = Intent(this, DownloadSongService::class.java)
+            val intent = Intent(this, MusicPlayerService::class.java)
             intent.putExtra("MUSIC_KEY", song)
             intent.putExtra(Intent.EXTRA_RESULT_RECEIVER, MyResultReceiver())
-            startService(intent)
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
         }
     }
 
