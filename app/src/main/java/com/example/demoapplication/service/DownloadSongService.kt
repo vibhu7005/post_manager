@@ -21,16 +21,7 @@ class DownloadSongService : Service() {
     }
 
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "falg = $flags:")
-        val songName = intent?.getStringExtra("MUSIC_KEY")
-        thread.mHandler.setContext(applicationContext)
-        val msg = Message.obtain()
-        msg.obj = songName
-        msg.arg1 = startId
-        thread.mHandler.sendMessage(msg)
-        return START_REDELIVER_INTENT
-    }
+
 
     override fun onBind(p0: Intent?): IBinder? {
         return null
