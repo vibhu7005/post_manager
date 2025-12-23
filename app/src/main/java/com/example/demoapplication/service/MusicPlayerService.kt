@@ -19,6 +19,7 @@ class MusicPlayerService : Service() {
     private var binder : IBinder? = MusicPlayerBinder()
     private var mediaPlayer : MediaPlayer? = null
     private var playbackListener: (() -> Unit)? = null
+    private var stateChangeListener: ((Boolean) -> Unit)? = null
     
     companion object {
         const val CHANNEL_ID = "MUSIC_PLAYER_CHANNEL"
@@ -37,8 +38,9 @@ class MusicPlayerService : Service() {
                 Log.d("MusicPlayerService", "Music playback completed")
                 // Reset MediaPlayer to beginning
                 seekTo(0)
-                // Notify listener that playback completed
+                // Notify listeners that playback completed (stopped)
                 playbackListener?.invoke()
+                notifyStateChange(false)
             }
         }
     }
@@ -94,6 +96,7 @@ class MusicPlayerService : Service() {
             if (!it.isPlaying) {
                 it.start()
                 Log.d("MusicPlayerService", "Music started")
+                notifyStateChange(true)
             }
         } ?: Log.e("MusicPlayerService", "MediaPlayer is null")
     }
@@ -103,8 +106,14 @@ class MusicPlayerService : Service() {
             if (it.isPlaying) {
                 it.pause()
                 Log.d("MusicPlayerService", "Music paused")
+                notifyStateChange(false)
             }
         } ?: Log.e("MusicPlayerService", "MediaPlayer is null")
+    }
+
+    private fun notifyStateChange(isPlaying: Boolean) {
+        updateNotification()
+        stateChangeListener?.invoke(isPlaying)
     }
 
     fun isPlaying(): Boolean {
@@ -113,6 +122,10 @@ class MusicPlayerService : Service() {
 
     fun setPlaybackListener(listener: (() -> Unit)?) {
         playbackListener = listener
+    }
+
+    fun setStateChangeListener(listener: ((Boolean) -> Unit)?) {
+        stateChangeListener = listener
     }
 
 
@@ -133,14 +146,8 @@ class MusicPlayerService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_PLAY -> {
-                playMusic()
-                updateNotification()
-            }
-            ACTION_PAUSE -> {
-                pauseMusic()
-                updateNotification()
-            }
+            ACTION_PLAY -> playMusic()
+            ACTION_PAUSE -> pauseMusic()
         }
         return START_NOT_STICKY
     }

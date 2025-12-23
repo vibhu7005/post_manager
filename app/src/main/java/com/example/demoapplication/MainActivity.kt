@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -75,9 +76,17 @@ class MainActivity : ComponentActivity() {
     fun AudioPlayerScreen() {
         var isPlaying by remember { mutableStateOf(false) }
         
-        // Set up the callback when service is connected
-        musicService?.setPlaybackListener {
-            isPlaying = false
+        // Set up listeners when service connects
+        LaunchedEffect(musicService) {
+            musicService?.let { service ->
+                isPlaying = service.isPlaying()
+                service.setStateChangeListener { playing ->
+                    isPlaying = playing
+                }
+                service.setPlaybackListener {
+                    isPlaying = false
+                }
+            }
         }
         
         Box(
@@ -100,10 +109,8 @@ class MainActivity : ComponentActivity() {
                         startService(intent)
                         if (isPlaying) {
                             musicService?.pauseMusic()
-                            isPlaying = false
                         } else {
                             musicService?.playMusic()
-                            isPlaying = true
                         }
                     },
                     modifier = Modifier.padding(16.dp)
