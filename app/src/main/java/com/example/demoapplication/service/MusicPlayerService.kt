@@ -12,10 +12,19 @@ class MusicPlayerService : Service() {
 
     private var binder : IBinder? = MusicPlayerBinder()
     private var mediaPlayer : MediaPlayer? = null
+    private var playbackListener: (() -> Unit)? = null
 
     override fun onCreate() {
         super.onCreate()
-        mediaPlayer = MediaPlayer.create(this, R.raw.test_music)
+        mediaPlayer = MediaPlayer.create(this, R.raw.test_music)?.apply {
+            setOnCompletionListener {
+                Log.d("MusicPlayerService", "Music playback completed")
+                // Reset MediaPlayer to beginning
+                seekTo(0)
+                // Notify listener that playback completed
+                playbackListener?.invoke()
+            }
+        }
     }
 
     fun playMusic() {
@@ -36,6 +45,14 @@ class MusicPlayerService : Service() {
         } ?: Log.e("MusicPlayerService", "MediaPlayer is null")
     }
 
+    fun isPlaying(): Boolean {
+        return mediaPlayer?.isPlaying ?: false
+    }
+
+    fun setPlaybackListener(listener: (() -> Unit)?) {
+        playbackListener = listener
+    }
+
 
     inner class MusicPlayerBinder : Binder() {
         fun getService(): MusicPlayerService {
@@ -43,12 +60,16 @@ class MusicPlayerService : Service() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("MusicPlayerService", "Service destroyed")
+    }
 
     override fun onBind(p0: Intent?): IBinder? {
         return binder
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
+        return START_NOT_STICKY
     }
 }
