@@ -79,6 +79,13 @@ class MainActivity : ComponentActivity() {
                     Text("Play")
                 }
 
+                Button(
+                    onClick = { musicService?.pauseMusic() },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text("Pause")
+                }
+
                 Text(
                     text = "Ready to play",
                     style = MaterialTheme.typography.bodyMedium
