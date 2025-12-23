@@ -1,292 +1,144 @@
 package com.example.demoapplication
 
-import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.ComponentName
-import android.content.ContentValues.TAG
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.ServiceConnection
+import android.media.MediaPlayer
 import android.os.Bundle
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
-import android.os.Message
-import android.os.ResultReceiver
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.example.demoapplication.data.model.Post
-import com.example.demoapplication.data.repository.PostRepositoryImpl
-import com.example.demoapplication.service.DownloadThread
-import com.example.demoapplication.service.MusicPlayerService
-import com.example.demoapplication.service.Worker
-import com.example.demoapplication.ui.viewmodel.PostViewModel
-import com.example.demoapplication.ui.viewmodel.PostUiState
-import com.example.demoapplication.ui.viewmodel.ViewModelFactory
-import kotlinx.coroutines.delay
-import java.util.concurrent.Executor
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 
 class MainActivity : ComponentActivity() {
-
-    val buttonText = mutableStateOf("")
-
-    val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {
-            Log.d(AppConstants.TAG + "main", "onReceive: ${p1?.getStringExtra("MESSAGE")} ")
-        }
-
-    }
-
-//    val downloadThread = DownloadThread()
-
-    val songList = listOf<String>("song1", "song2", "song3")
-
-    private val postViewModel: PostViewModel by viewModels {
-        ViewModelFactory { PostViewModel(PostRepositoryImpl) }
-    }
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(
-            p0: ComponentName?,
-            p1: IBinder?
-        ) {
-            TODO("Not yet implemented")
-        }
-
-        override fun onServiceDisconnected(p0: ComponentName?) {
-            TODO("Not yet implemented")
-        }
-
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        executeButtonText()
-//        downloadThread.start()
+        
         setContent {
-            Structure()
+            MaterialTheme {
+                AudioPlayerScreen()
+            }
         }
     }
+}
 
-    override fun onStart() {
-        super.onStart()
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-            broadcastReceiver,
-            IntentFilter().apply {
-                addAction("DOWNLOAD_SERVICE")
-            })
+@Composable
+fun AudioPlayerScreen() {
+    val context = LocalContext.current
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var isPlaying by remember { mutableStateOf(false) }
+    
+    DisposableEffect(context) {
+        mediaPlayer = MediaPlayer.create(context, R.raw.short_test).apply {
+            setOnCompletionListener {
+                isPlaying = false
+                Log.d("AudioPlayer", "Audio playback completed")
+            }
+            setOnPreparedListener {
+                Log.d("AudioPlayer", "MediaPlayer prepared successfully")
+            }
+            setOnErrorListener { _, what, extra ->
+                Log.e("AudioPlayer", "MediaPlayer error: what=$what, extra=$extra")
+                isPlaying = false
+                true
+            }
+        }
+        
+        onDispose {
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
     }
-
-
-    override fun onStop() {
-        super.onStop()
-        unregisterReceiver(broadcastReceiver)
-        unbindService(serviceConnection)
+    
+    fun playAudio() {
+        mediaPlayer?.let { player ->
+            try {
+                if (!player.isPlaying) {
+                    player.start()
+                    isPlaying = true
+                    Log.d("AudioPlayer", "Audio playback started")
+                } else {
+                    Log.d("AudioPlayer", "Audio is already playing")
+                }
+            } catch (e: Exception) {
+                Log.e("AudioPlayer", "Error starting playback: ${e.message}")
+            }
+        } ?: Log.e("AudioPlayer", "MediaPlayer is null")
     }
-
-    private fun executeButtonText() {
-        buttonText.value = "Press"
+    
+    fun pauseAudio() {
+        mediaPlayer?.let { player ->
+            try {
+                if (player.isPlaying) {
+                    player.pause()
+                    isPlaying = false
+                    Log.d("AudioPlayer", "Audio playback paused")
+                } else {
+                    Log.d("AudioPlayer", "Audio is not playing")
+                }
+            } catch (e: Exception) {
+                Log.e("AudioPlayer", "Error pausing playback: ${e.message}")
+            }
+        } ?: Log.e("AudioPlayer", "MediaPlayer is null")
     }
-
-
-    @Composable
-    fun PostListScreen(
-        modifier: Modifier = Modifier,
-        viewModel: PostViewModel = viewModel(
-            factory = ViewModelFactory { PostViewModel(PostRepositoryImpl) }
-        )
+    
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        val uiState by viewModel.uiState.observeAsState(initial = PostUiState())
-
-        Box(modifier = modifier.fillMaxSize()) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                uiState.errorMessage != null -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "Error: ${uiState.errorMessage}",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(onClick = { viewModel.retry() }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        items(uiState.posts) { post ->
-                            PostItem(post = post)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun PostItem(post: Post) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = post.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "User ID: ${post.userId}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                Text(
-                    text = post.body,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+            Text(
+                text = "Audio Player",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            if (isPlaying) {
+                Button(
+                    onClick = { pauseAudio() },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text("Pause")
+                }
+            } else {
+                Button(
+                    onClick = { playAudio() },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text("Play")
+                }
             }
+            
+            Text(
+                text = if (isPlaying) "Playing audio..." else "Audio stopped",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            
+            Text(
+                text = "File: sample_audio.mp3",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
-    }
-
-    @Composable
-    @Preview(showBackground = true, showSystemUi = true)
-    fun Structure() {
-        Column {
-//        var name = remember { mutableStateOf("John") }
-//
-//        Text("Name: $name")
-//        AutoGreeter(name = name)
-
-            Button(onClick = {
-                startMusicDownload()
-//                Log.d(AppConstants.TAG, "Button cliked")
-//                for (song in songList) {
-//                    val message = Message.obtain()
-//                    message.obj = song
-//                    downloadThread.mHandler.sendMessage(message)
-//                }
-            }) {
-                Text(buttonText.value)
-            }
-        }
-    }
-
-    fun startMusicDownload() {
-        for (song in songList) {
-            val intent = Intent(this, MusicPlayerService::class.java)
-            intent.putExtra("MUSIC_KEY", song)
-            intent.putExtra(Intent.EXTRA_RESULT_RECEIVER, MyResultReceiver())
-            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
-        }
-    }
-
-
-    fun doWork() {
-        val service = Executors.newFixedThreadPool(5) as ThreadPoolExecutor
-        for (i in 1..10) {
-            service.execute(Worker(i))
-        }
-    }
-
-    @Composable
-    fun AutoGreeter(name: MutableState<String>) {
-//    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
-        Text(name.value)
-//    }
-        val currentName by rememberUpdatedState(name)
-
-        LaunchedEffect(Unit) {
-            while (true) {
-                delay(2000)
-                Log.d("MainActivity", "Hello ${name.value}!") // Always uses latest name
-            }
-        }
-    }
-
-    @Composable
-    fun MyButton(onClick: () -> Unit) {
-        onClick.invoke()
     }
 }
-
-class MyResultReceiver : ResultReceiver(Handler(Looper.getMainLooper())) {
-
-    override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
-        Log.d(AppConstants.TAG, "main activity ${resultData?.getString("downloadStatus")}")
-    }
-}
-
-//@Preview(showBackground = true)
-//@Composable
-//fun PostItemPreview() {
-//    DemoApplicationTheme {
-//        PostItem(
-//            post = Post(
-//                id = 1,
-//                userId = 1,
-//                title = "Sample Post Title",
-//                body = "This is a sample post body that demonstrates how the post will look in the UI."
-//            )
-//        )
-//    }
-//}
