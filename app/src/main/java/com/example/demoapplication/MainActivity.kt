@@ -1,5 +1,7 @@
 package com.example.demoapplication
 
+import android.content.Intent
+import android.content.ServiceConnection
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
@@ -25,12 +27,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.demoapplication.service.MusicPlayerService
+import com.example.demoapplication.service.PlayerService
 
 class MainActivity : ComponentActivity() {
+
+    var musicService : MusicPlayerService? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+
+        val service = MusicPlayerService()
+        val intent = Intent(this, PlayerService::class.java)
+
+        val serviceConnection = object : ServiceConnection {
+            override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
+                Log.d("MainActivity", "Service connected")
+                musicService = (binder as MusicPlayerService.MusicPlayerBinder).getService()
+            }
+
+            override fun onServiceDisconnected(name: android.content.ComponentName?) {
+                Log.d("MainActivity", "Service disconnected")
+            }
+        }
+
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
         
         setContent {
             MaterialTheme {

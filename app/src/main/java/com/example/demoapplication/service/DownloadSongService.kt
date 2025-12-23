@@ -1,26 +1,21 @@
 package com.example.demoapplication.service
 
-import android.app.IntentService
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import android.os.Message
-import android.os.ResultReceiver
 import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.demoapplication.AppConstants.TAG
-import com.example.demoapplication.MainActivity
 
 //started service
-class MusicPlayerService() : Service() {
+class PlayerService() : Service() {
     lateinit var thread : DownloadThread
     private var latestStartId = 0
     private val binder = MyBinderService()
 
     inner class MyBinderService : Binder() {
-        fun getService(): MusicPlayerService {
-            return this@MusicPlayerService
+        fun getService(): PlayerService {
+            return this@PlayerService
         }
     }
     override fun onBind(p0: Intent?): IBinder? {

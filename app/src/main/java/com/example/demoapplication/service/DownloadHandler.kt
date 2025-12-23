@@ -2,18 +2,15 @@ package com.example.demoapplication.service
 
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.os.ResultReceiver
-import android.security.identity.ResultData
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.demoapplication.AppConstants.TAG
 
 class DownloadHandler(looper: Looper) : Handler(looper) {
-    private lateinit var service: MusicPlayerService
+    private lateinit var service: PlayerService
     private var mContext : Context? = null
 
     override fun handleMessage(msg: Message) {
@@ -21,7 +18,7 @@ class DownloadHandler(looper: Looper) : Handler(looper) {
     }
 
 
-    fun setService(downloadService: MusicPlayerService) {
+    fun setService(downloadService: PlayerService) {
         service = downloadService
     }
 
