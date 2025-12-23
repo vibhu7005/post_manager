@@ -58,11 +58,34 @@ class MusicPlayerService : Service() {
     }
 
     private fun createNotification(): Notification {
+        val isCurrentlyPlaying = mediaPlayer?.isPlaying ?: false
+        
+        // Create PendingIntents for play/pause actions
+        val playPauseAction = if (isCurrentlyPlaying) {
+            val pauseIntent = Intent(this, MusicPlayerService::class.java).apply {
+                action = ACTION_PAUSE
+            }
+            val pausePendingIntent = PendingIntent.getService(
+                this, 0, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            NotificationCompat.Action(android.R.drawable.ic_media_pause, "Pause", pausePendingIntent)
+        } else {
+            val playIntent = Intent(this, MusicPlayerService::class.java).apply {
+                action = ACTION_PLAY
+            }
+            val playPendingIntent = PendingIntent.getService(
+                this, 0, playIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            NotificationCompat.Action(android.R.drawable.ic_media_play, "Play", playPendingIntent)
+        }
+        
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Music Player")
-            .setContentText("Playing music in background")
+            .setContentText(if (isCurrentlyPlaying) "Playing..." else "Paused")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .addAction(playPauseAction)
             .setOngoing(true)
+            .setStyle(NotificationCompat.BigTextStyle())
             .build()
     }
 
@@ -109,6 +132,22 @@ class MusicPlayerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_PLAY -> {
+                playMusic()
+                updateNotification()
+            }
+            ACTION_PAUSE -> {
+                pauseMusic()
+                updateNotification()
+            }
+        }
         return START_NOT_STICKY
+    }
+    
+    private fun updateNotification() {
+        val notification = createNotification()
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(NOTIFICATION_ID, notification)
     }
 }
