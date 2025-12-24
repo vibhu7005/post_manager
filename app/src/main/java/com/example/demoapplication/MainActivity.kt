@@ -1,5 +1,8 @@
 package com.example.demoapplication
 
+import android.app.job.JobInfo
+import android.app.job.JobScheduler
+import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -26,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.demoapplication.service.DownloadJobService
 import com.example.demoapplication.service.MusicPlayerService
 import com.example.demoapplication.service.PlayerService
 
@@ -34,10 +38,18 @@ class MainActivity : ComponentActivity() {
     var musicService : MusicPlayerService? = null
     private var serviceConnection: ServiceConnection? = null
     private var isPlaying = mutableStateOf(false)
+    private var isServiceBound = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val scheduler = getSystemService(JOB_SCHEDULER_SERVICE) as JobScheduler
+        val jobInfo = JobInfo.Builder(1, ComponentName(this, DownloadJobService::class.java))
+            .setMinimumLatency(5000) // 5 second delay
+            .build()
+        val result = scheduler.schedule(jobInfo)
+        Log.d("MainActivity", "Job scheduled with result: $result")
 
         val intent = Intent(this, MusicPlayerService::class.java)
 
@@ -45,6 +57,7 @@ class MainActivity : ComponentActivity() {
             override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
                 Log.d("MainActivity", "Service connected")
                 musicService = (binder as MusicPlayerService.MusicPlayerBinder).getService()
+                isServiceBound = true
                 
                 // Set up listeners immediately when service connects
                 musicService?.let { service ->
@@ -71,10 +84,11 @@ class MainActivity : ComponentActivity() {
                 musicService?.setStateChangeListener(null)
                 musicService?.setPlaybackListener(null)
                 musicService = null
+                isServiceBound = false
             }
         }
 
-        bindService(intent, serviceConnection!!, BIND_AUTO_CREATE)
+//        bindService(intent, serviceConnection!!, BIND_AUTO_CREATE)
 
         setContent {
             MaterialTheme {
@@ -85,13 +99,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        serviceConnection?.let {
-            unbindService(it)
+        if (isServiceBound) {
+            serviceConnection?.let {
+                unbindService(it)
+                isServiceBound = false
+            }
         }
-//        serviceConnection?.let { connection ->
-//            unbindService(connection)
-
-//        }
         musicService = null
     }
 
