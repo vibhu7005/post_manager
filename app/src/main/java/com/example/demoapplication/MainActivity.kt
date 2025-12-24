@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
 
     var musicService : MusicPlayerService? = null
     private var serviceConnection: ServiceConnection? = null
+    private var isPlaying = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,10 +45,31 @@ class MainActivity : ComponentActivity() {
             override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
                 Log.d("MainActivity", "Service connected")
                 musicService = (binder as MusicPlayerService.MusicPlayerBinder).getService()
+                
+                // Set up listeners immediately when service connects
+                musicService?.let { service ->
+                    Log.d("MainActivity", "Setting up listeners, current state: ${service.isPlaying()}")
+                    isPlaying.value = service.isPlaying()
+                    service.setStateChangeListener { playing ->
+                        Log.d("MainActivity", "State change listener called with: $playing")
+                        runOnUiThread {
+                            Log.d("MainActivity", "Updating UI state to: $playing")
+                            isPlaying.value = playing
+                        }
+                    }
+                    service.setPlaybackListener {
+                        Log.d("MainActivity", "Playback listener called (completion)")
+                        runOnUiThread {
+                            isPlaying.value = false
+                        }
+                    }
+                }
             }
 
             override fun onServiceDisconnected(name: android.content.ComponentName?) {
                 Log.d("MainActivity", "Service disconnected")
+                musicService?.setStateChangeListener(null)
+                musicService?.setPlaybackListener(null)
                 musicService = null
             }
         }
@@ -74,20 +97,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun AudioPlayerScreen() {
-        var isPlaying by remember { mutableStateOf(false) }
-        
-        // Set up listeners when service connects
-        LaunchedEffect(musicService) {
-            musicService?.let { service ->
-                isPlaying = service.isPlaying()
-                service.setStateChangeListener { playing ->
-                    isPlaying = playing
-                }
-                service.setPlaybackListener {
-                    isPlaying = false
-                }
-            }
-        }
+        val currentPlayingState by isPlaying
         
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -107,7 +117,7 @@ class MainActivity : ComponentActivity() {
                     onClick = {
                         val intent = Intent(this@MainActivity, MusicPlayerService::class.java)
                         startService(intent)
-                        if (isPlaying) {
+                        if (currentPlayingState) {
                             musicService?.pauseMusic()
                         } else {
                             musicService?.playMusic()
@@ -115,11 +125,11 @@ class MainActivity : ComponentActivity() {
                     },
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(if (isPlaying) "Pause" else "Play")
+                    Text(if (currentPlayingState) "Pause" else "Play")
                 }
 
                 Text(
-                    text = if (isPlaying) "Playing..." else "Ready to play",
+                    text = if (currentPlayingState) "Playing..." else "Ready to play",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

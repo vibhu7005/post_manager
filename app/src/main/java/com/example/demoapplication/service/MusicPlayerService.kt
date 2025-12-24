@@ -112,8 +112,12 @@ class MusicPlayerService : Service() {
     }
 
     private fun notifyStateChange(isPlaying: Boolean) {
+        Log.d("MusicPlayerService", "notifyStateChange called with isPlaying: $isPlaying")
         updateNotification()
-        stateChangeListener?.invoke(isPlaying)
+        stateChangeListener?.let { listener ->
+            Log.d("MusicPlayerService", "Calling state change listener")
+            listener.invoke(isPlaying)
+        } ?: Log.d("MusicPlayerService", "State change listener is null")
     }
 
     fun isPlaying(): Boolean {
