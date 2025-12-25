@@ -1,152 +1,125 @@
 package com.example.demoapplication
 
-import android.app.job.JobInfo
-import android.app.job.JobScheduler
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.demoapplication.service.DownloadJobService
-import com.example.demoapplication.service.MusicPlayerService
-import com.example.demoapplication.service.PlayerService
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.example.demoapplication.worker.DummyWorker
 
 class MainActivity : ComponentActivity() {
-
-    var musicService : MusicPlayerService? = null
-    private var serviceConnection: ServiceConnection? = null
-    private var isPlaying = mutableStateOf(false)
-    private var isServiceBound = false
+    
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        val scheduler = getSystemService(JOB_SCHEDULER_SERVICE) as JobScheduler
-        val jobInfo = JobInfo.Builder(1, ComponentName(this, DownloadJobService::class.java))
-            .setMinimumLatency(5000) // 5 second delay
-            .build()
-        val result = scheduler.schedule(jobInfo)
-        Log.d("MainActivity", "Job scheduled with result: $result")
-
-        val intent = Intent(this, MusicPlayerService::class.java)
-
-        serviceConnection = object : ServiceConnection {
-            override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
-                Log.d("MainActivity", "Service connected")
-                musicService = (binder as MusicPlayerService.MusicPlayerBinder).getService()
-                isServiceBound = true
-                
-                // Set up listeners immediately when service connects
-                musicService?.let { service ->
-                    Log.d("MainActivity", "Setting up listeners, current state: ${service.isPlaying()}")
-                    isPlaying.value = service.isPlaying()
-                    service.setStateChangeListener { playing ->
-                        Log.d("MainActivity", "State change listener called with: $playing")
-                        runOnUiThread {
-                            Log.d("MainActivity", "Updating UI state to: $playing")
-                            isPlaying.value = playing
-                        }
-                    }
-                    service.setPlaybackListener {
-                        Log.d("MainActivity", "Playback listener called (completion)")
-                        runOnUiThread {
-                            isPlaying.value = false
-                        }
-                    }
-                }
-            }
-
-            override fun onServiceDisconnected(name: android.content.ComponentName?) {
-                Log.d("MainActivity", "Service disconnected")
-                musicService?.setStateChangeListener(null)
-                musicService?.setPlaybackListener(null)
-                musicService = null
-                isServiceBound = false
-            }
-        }
-
-//        bindService(intent, serviceConnection!!, BIND_AUTO_CREATE)
+        
+        Log.d(TAG, "MainActivity created")
 
         setContent {
             MaterialTheme {
-                AudioPlayerScreen()
-            }
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        if (isServiceBound) {
-            serviceConnection?.let {
-                unbindService(it)
-                isServiceBound = false
-            }
-        }
-        musicService = null
-    }
-
-    @Composable
-    fun AudioPlayerScreen() {
-        val currentPlayingState by isPlaying
-        
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Audio Player",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Button(
-                    onClick = {
-                        val intent = Intent(this@MainActivity, MusicPlayerService::class.java)
-                        startService(intent)
-                        if (currentPlayingState) {
-                            musicService?.pauseMusic()
-                        } else {
-                            musicService?.playMusic()
-                        }
-                    },
-                    modifier = Modifier.padding(16.dp)
+                Surface(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Text(if (currentPlayingState) "Pause" else "Play")
+                    WorkManagerScreen()
                 }
-
-                Text(
-                    text = if (currentPlayingState) "Playing..." else "Ready to play",
-                    style = MaterialTheme.typography.bodyMedium
-                )
             }
         }
+    }
+    
+    @Composable
+    fun WorkManagerScreen() {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "WorkManager Demo",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            
+            Button(
+                onClick = {
+                    startDummyWork()
+                }
+            ) {
+                Text("Start Dummy Work")
+            }
+            
+            Button(
+                onClick = {
+                    startDummyWorkWithConstraints()
+                }
+            ) {
+                Text("Start Work with Network Constraint")
+            }
+            
+            Button(
+                onClick = {
+                    cancelAllWork()
+                }
+            ) {
+                Text("Cancel All Work")
+            }
+        }
+    }
+    
+    private fun startDummyWork() {
+        Log.d(TAG, "Starting dummy work...")
+        
+        val workRequest = OneTimeWorkRequestBuilder<DummyWorker>()
+            .addTag("dummy-work")
+            .build()
+        
+        WorkManager.getInstance(this).enqueue(workRequest)
+        Log.d(TAG, "Work enqueued with ID: ${workRequest.id}")
+    }
+    
+    private fun startDummyWorkWithConstraints() {
+        Log.d(TAG, "Starting dummy work with network constraint...")
+        
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+        
+        val workRequest = OneTimeWorkRequestBuilder<DummyWorker>()
+            .setConstraints(constraints)
+            .addTag("constrained-work")
+            .build()
+        
+        WorkManager.getInstance(this).enqueue(workRequest)
+        Log.d(TAG, "Constrained work enqueued with ID: ${workRequest.id}")
+    }
+    
+    private fun cancelAllWork() {
+        Log.d(TAG, "Cancelling all work...")
+        WorkManager.getInstance(this).cancelAllWork()
     }
 }
 
