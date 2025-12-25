@@ -22,8 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import java.util.concurrent.TimeUnit
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.demoapplication.worker.DummyWorker
 
 class MainActivity : ComponentActivity() {
@@ -90,14 +93,18 @@ class MainActivity : ComponentActivity() {
     }
     
     private fun startDummyWork() {
-        Log.d(TAG, "Starting dummy work...")
+        Log.d(TAG, "Starting periodic work...")
         
-        val workRequest = OneTimeWorkRequestBuilder<DummyWorker>()
-            .addTag("dummy-work")
-            .build()
+        val periodicRequest = PeriodicWorkRequestBuilder<DummyWorker>(
+            repeatInterval = 15, // 15 minutes (minimum)
+            repeatIntervalTimeUnit = TimeUnit.MINUTES
+        )
+        .setInputData(workDataOf("task_name" to "periodic-task"))
+        .addTag("periodic-work")
+        .build()
         
-        WorkManager.getInstance(this).enqueue(workRequest)
-        Log.d(TAG, "Work enqueued with ID: ${workRequest.id}")
+        WorkManager.getInstance(this).enqueue(periodicRequest)
+        Log.d(TAG, "Periodic work enqueued with ID: ${periodicRequest.id}")
     }
     
     private fun startDummyWorkWithConstraints() {
