@@ -16,6 +16,10 @@ fun valVsVarExamples() {
         get() = System.currentTimeMillis() // Recalculated on each access
 }
 
+fun main {
+    valVsVarExamples()
+}
+
 // 2. DATA TYPES & TYPE INFERENCE
 fun dataTypesAndInference() {
     // Primitive types are objects in Kotlin
