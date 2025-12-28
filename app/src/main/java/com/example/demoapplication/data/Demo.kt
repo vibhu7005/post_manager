@@ -8,32 +8,90 @@ class Demo {
         get() = field + 1
 }
 
-suspend fun main() {
-    val demo = Demo()
-    println(demo.message)
-    delay(4000)
-    println(demo.message)
-    val short: Boolean? = null
-    println(short?.javaClass)
+fun main() {
+    val list = mutableListOf(1, 2, 3, 4, 5, 6)
+    list.customFilter { it % 2 == 0 }
+    println(list)
+    "super" concat "man"
 
-    fun dataTypesAndInference() {
-        // Primitive types are objects in Kotlin
-        val byte: Byte = 127
-        val short: Short = 32767
-        val int = 42 // Type inferred as Int
-        val long = 42L // Type inferred as Long
-        val float = 3.14f // Type inferred as Float
-        val double = 3.14 // Type inferred as Double
+    println(Car("orange").cyclinders)
+    val s = 4;
+//    println(s.isInstanceOf(Int))
 
-        // Type inference limitations
-        val list = listOf(1, 2, 3) // Inferred as List<Int>
-        // val emptyList = listOf() // ✗ Cannot infer type
-        val emptyList = listOf<String>() // ✓ Explicit type needed
+}
 
-        // Underscores in numeric literals
-        val million = 1_000_000
-        val binary = 0b11010010_01101001_10010100_10010010
-        val hex = 0xFF_EC_DE_5E
+
+inline fun<reified T> isInstanceOf(obj : Any) : Boolean = obj is T
+
+
+fun<T> isInstanceOf (obj : T) : Boolean {
+    return obj is String
+}
+
+
+fun addaa(op: (a: Int, b: Int) -> Int): Int {
+    return op(5, 6)
+}
+
+fun <T> MutableList<T>.customFilter(predicate: (T) -> Boolean) {
+    var index = 0
+    while (index in 0..this.size - 1) {
+        if (predicate(this[index])) {
+            removeAt(index)
+        } else {
+            index++;
+        }
     }
 }
+
+
+infix fun String.concat(string: String): String {
+    val map = {1 to 2; 3 to 4; 5 to 4}
+
+    return this + string
+}
+
+
+open class Animal {
+    open fun walk() {
+        println("Animal is walking")
+    }
+}
+
+
+class Dog : Animal() {
+    override fun walk() {
+        println("Dog is walking")
+    }
+}
+
+class Car(override val color: String) : Vehicle() {
+    internal val tyres = 4
+    override fun horsepower() {
+        println("Car horsepower is 150")
+    }
+}
+
+abstract class Vehicle {
+    val cyclinders = 2
+
+    abstract val color : String
+    abstract fun horsepower()
+
+    fun startEngine() {
+        println("Engine started")
+    }
+}
+
+interface VehicleInerface {
+    fun horsepower()
+    fun startEngine() {
+        println("Engine started from interface")
+    }
+}
+
+
+
+
+
 

@@ -16,9 +16,6 @@ fun valVsVarExamples() {
         get() = System.currentTimeMillis() // Recalculated on each access
 }
 
-fun main {
-    valVsVarExamples()
-}
 
 // 2. DATA TYPES & TYPE INFERENCE
 fun dataTypesAndInference() {
@@ -147,6 +144,8 @@ class FunctionExamples {
         val array = intArrayOf(1, 2, 3, 4)
         sum(*array) // Spread operator
     }
+
+   // 1, 2, 3, 4, 5
     
     // Infix functions
     infix fun Int.times(str: String) = str.repeat(this)
