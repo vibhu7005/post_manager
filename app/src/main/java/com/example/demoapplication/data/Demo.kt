@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import kotlin.reflect.typeOf
 
 class Demo {
+    val x = arrayOf(1,2)
     val message = System.currentTimeMillis()
         get() = field + 1
 }
@@ -18,18 +19,26 @@ fun main() {
     val s = 4;
 //    println(s.isInstanceOf(Int))
 
+    // Reified example
+    println(checkType<String>("hello"))  // true
+    println(checkType<String>(42))       // false
+    println(checkType<Int>(42))          // true
+}
+
+inline fun <reified T> emptyListOf(): Array<T> {
+    return emptyArray<T>()
 }
 
 
-inline fun<reified T> isInstanceOf(obj : Any) : Boolean = obj is T
+inline fun <reified T> checkType(obj: Any): Boolean = obj is T
 
 
-fun<T> isInstanceOf (obj : T) : Boolean {
+fun <T> isInstanceOf(obj: T): Boolean {
     return obj is String
 }
 
 
-fun addaa(op: (a: Int, b: Int) -> Int): Int {
+inline fun addaa(op: (a: Int, b: Int) -> Int): Int {
     return op(5, 6)
 }
 
@@ -46,7 +55,7 @@ fun <T> MutableList<T>.customFilter(predicate: (T) -> Boolean) {
 
 
 infix fun String.concat(string: String): String {
-    val map = {1 to 2; 3 to 4; 5 to 4}
+    val map = { 1 to 2; 3 to 4; 5 to 4 }
 
     return this + string
 }
@@ -75,7 +84,7 @@ class Car(override val color: String) : Vehicle() {
 abstract class Vehicle {
     val cyclinders = 2
 
-    abstract val color : String
+    abstract val color: String
     abstract fun horsepower()
 
     fun startEngine() {
