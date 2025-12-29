@@ -5,24 +5,29 @@ import kotlin.reflect.typeOf
 
 class Demo {
     val x = arrayOf(1,2)
+    val f : Int? = null
     val message = System.currentTimeMillis()
         get() = field + 1
 }
 
 fun main() {
-    val list = mutableListOf(1, 2, 3, 4, 5, 6)
-    list.customFilter { it % 2 == 0 }
-    println(list)
-    "super" concat "man"
-
-    println(Car("orange").cyclinders)
-    val s = 4;
-//    println(s.isInstanceOf(Int))
-
-    // Reified example
-    println(checkType<String>("hello"))  // true
-    println(checkType<String>(42))       // false
-    println(checkType<Int>(42))          // true
+//    val list = mutableListOf(1, 2, 3, 4, 5, 6)
+//    list.customFilter { it % 2 == 0 }
+//    println(list)
+//    "super" concat "man"
+//
+//    println(Car("orange").cyclinders)
+//    val s = 4;
+////    println(s.isInstanceOf(Int))
+//
+//    // Reified example
+//    println(checkType<String>("hello"))  // true
+//    println(checkType<String>(42))       // false
+//    println(checkType<Int>(42))          // true
+    
+    // Thread safety demo
+    println("\n--- Thread Safety Example ---")
+    threadSafetyExample()
 }
 
 inline fun <reified T> emptyListOf(): Array<T> {
@@ -99,8 +104,37 @@ interface VehicleInerface {
     }
 }
 
+// Thread safety example
+class SharedCounter {
+    val list: MutableList<Int> by lazy {mutableListOf()}  // val but NOT thread safe!
+    var count: Int = 0  // var - definitely not thread safe
+}
 
+fun threadSafetyExample() {
+    val sharedObject = SharedCounter()
 
-
+    // Thread 1
+    Thread {
+        repeat(10000000) {
+            sharedObject.list.add(it)  // Race condition!
+            sharedObject.count++       // Race condition!
+        }
+        println("Thread 1 finished")
+    }.start()
+    
+    // Thread 2  
+    Thread {
+       repeat(10000000) {
+            sharedObject.list.add(it)  // Race condition!
+            sharedObject.count++       // Race condition!
+        }
+        println("Thread 2 finished")
+    }.start()
+    
+    // Wait and check results
+    Thread.sleep(2000)
+    println("List size: ${sharedObject.list.size}")  // Should be 2000, but might be less
+    println("Count: ${sharedObject.count}")           // Should be 2000, but might be less
+}
 
 
