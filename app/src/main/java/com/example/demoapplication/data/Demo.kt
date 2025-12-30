@@ -1,6 +1,6 @@
 package com.example.demoapplication.data
 
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlin.reflect.typeOf
 
 class Demo {
@@ -111,7 +111,240 @@ fun processPayment(method: PaymentMethod): String {
     }
 }
 
-fun main() {
+// Scope Functions Demo
+fun scopeFunctionsDemo() {
+    println("=== SCOPE FUNCTIONS DEMO ===")
+    
+    data class Person(var name: String, var age: Int, var city: String)
+    
+    val person = Person("John", 25, "New York")
+    
+    // 1. LET - object as parameter (it), returns lambda result
+    println("\n1. LET:")
+    val letResult = person.let { person ->
+        println("Processing ${person.name}")
+        person.age + 10  // Returns this value
+    }
+    println("Let returned: $letResult")  // 35
+    
+    // 2. RUN - object as scope (this), returns lambda result  
+    println("\n2. RUN:")
+    val runResult = person.run {
+        println("Processing $name")  // Direct access via 'this'
+        age + 20  // Returns this value
+    }
+    println("Run returned: $runResult")  // 45
+    
+    // 3. APPLY - object as scope (this), returns original object
+    println("\n3. APPLY:")
+    val applyResult = person.apply {
+        name = "Jane"    // Direct modification via 'this'
+        age = 30
+        city = "London"
+    }
+    println("Apply returned: $applyResult")  // Modified Person object
+    
+    // 4. ALSO - object as parameter (it), returns original object
+    println("\n4. ALSO:")
+    val alsoResult = person.also { person ->
+        println("Logging: ${person.name} is ${person.age} years old")
+        // Side effects only
+    }
+    println("Also returned: $alsoResult")  // Same Person object
+    
+    // 5. WITH - NOT an extension, object as scope (this), returns lambda result
+    println("\n5. WITH:")
+    val withResult = with(person) {
+        println("Processing $name")  // Direct access via 'this'
+        "$name lives in $city"  // Returns this value
+    }
+    println("With returned: $withResult")  // "Jane lives in London"
+}
+
+// Coroutine Builders Demo
+suspend fun coroutineBuildersDemo() {
+    println("=== COROUTINE BUILDERS DEMO ===")
+    
+    // 1. LAUNCH - Fire and forget, returns Job
+    println("\n1. LAUNCH - Fire and Forget:")
+    
+    val job1 = launch {
+        repeat(3) {
+            println("Launch task $it running...")
+            delay(500)
+        }
+        println("Launch task completed!")
+    }
+    
+    val job2 = launch {
+        delay(1000)
+        println("Another launch task finished!")
+    }
+    
+    println("Launch calls are non-blocking - this prints immediately")
+    
+    // Wait for jobs to complete
+    job1.join()
+    job2.join()
+    
+    // 2. ASYNC - Returns a value, returns Deferred<T>
+    println("\n2. ASYNC - Returns Values:")
+    
+    suspend fun calculateSquare(num: Int): Int {
+        delay(800)
+        return num * num
+    }
+    
+    suspend fun calculateCube(num: Int): Int {
+        delay(600)
+        return num * num * num
+    }
+    
+    // Sequential approach (slow)
+    val sequentialStart = System.currentTimeMillis()
+    val square = calculateSquare(5)
+    val cube = calculateCube(5)
+    println("Sequential: square=$square, cube=$cube")
+    println("Sequential time: ${System.currentTimeMillis() - sequentialStart}ms")
+    
+    // Concurrent approach with async (fast)
+    val concurrentStart = System.currentTimeMillis()
+    val squareDeferred = async { calculateSquare(5) }
+    val cubeDeferred = async { calculateCube(5) }
+    
+    val squareResult = squareDeferred.await()
+    val cubeResult = cubeDeferred.await()
+    println("Concurrent: square=$squareResult, cube=$cubeResult")
+    println("Concurrent time: ${System.currentTimeMillis() - concurrentStart}ms")
+    
+    // 3. Multiple async operations
+    println("\n3. Multiple ASYNC Operations:")
+    val numbers = listOf(1, 2, 3, 4, 5)
+    
+    val deferredResults = numbers.map { num ->
+        async {
+            delay(num * 100L)
+            "Processed $num"
+        }
+    }
+    
+    val results = deferredResults.map { it.await() }
+    println("All results: $results")
+    
+    // 4. Error handling with coroutines
+    println("\n4. Error Handling:")
+    
+    val riskyJob = launch {
+        try {
+            delay(300)
+            throw Exception("Something went wrong!")
+        } catch (e: Exception) {
+            println("Caught error in launch: ${e.message}")
+        }
+    }
+    
+    val riskyAsync = async {
+        delay(400)
+        throw Exception("Async failed!")
+    }
+    
+    try {
+        riskyJob.join()
+        riskyAsync.await()
+    } catch (e: Exception) {
+        println("Caught error from async: ${e.message}")
+    }
+    
+    // 5. Job cancellation
+    println("\n5. Job Cancellation:")
+    val longRunningJob = launch {
+        repeat(10) {
+            if (!isActive) {
+                println("Job was cancelled!")
+                return@launch
+            }
+            println("Working... $it")
+            delay(200)
+        }
+    }
+    
+    delay(800)
+    println("Cancelling job...")
+    longRunningJob.cancel()
+    longRunningJob.join()
+}
+
+// Suspend Functions Demo
+suspend fun suspendFunctionsDemo() {
+    println("=== SUSPEND FUNCTIONS DEMO ===")
+    
+    // 1. Basic suspend function
+    suspend fun fetchUserData(userId: String): String {
+        println("Fetching user data for $userId...")
+        delay(1000) // Simulates network delay - only works in suspend functions!
+        return "User data for $userId"
+    }
+    
+    // 2. Sequential execution
+    println("\n1. Sequential Execution:")
+    val start = System.currentTimeMillis()
+    
+    val user1 = fetchUserData("123")
+    val user2 = fetchUserData("456")
+    val user3 = fetchUserData("789")
+    
+    println("Results: $user1, $user2, $user3")
+    println("Sequential time: ${System.currentTimeMillis() - start}ms") // ~3000ms
+    
+    // 3. Concurrent execution with async
+    println("\n2. Concurrent Execution:")
+    val concurrentStart = System.currentTimeMillis()
+    
+    val deferred1 = async { fetchUserData("111") }
+    val deferred2 = async { fetchUserData("222") }
+    val deferred3 = async { fetchUserData("333") }
+    
+    val results = listOf(deferred1.await(), deferred2.await(), deferred3.await())
+    println("Concurrent results: $results")
+    println("Concurrent time: ${System.currentTimeMillis() - concurrentStart}ms") // ~1000ms
+    
+    // 4. Error handling in suspend functions
+    suspend fun riskyOperation(): String {
+        delay(500)
+        if (Math.random() > 0.5) {
+            throw Exception("Random failure!")
+        }
+        return "Success!"
+    }
+    
+    println("\n3. Error Handling:")
+    try {
+        val result = riskyOperation()
+        println("Operation result: $result")
+    } catch (e: Exception) {
+        println("Caught error: ${e.message}")
+    }
+    
+    // 5. Suspend function that returns different types
+    suspend fun <T> fetchData(endpoint: String, parser: (String) -> T): T {
+        println("Fetching from $endpoint...")
+        delay(800)
+        val rawData = "raw_data_from_$endpoint"
+        return parser(rawData)
+    }
+    
+    println("\n4. Generic Suspend Function:")
+    val stringData = fetchData("users") { it.uppercase() }
+    val intData = fetchData("count") { it.length }
+    
+    println("String data: $stringData")
+    println("Int data: $intData")
+}
+
+fun main() = runBlocking {
+    coroutineBuildersDemo()
+    suspendFunctionsDemo()
+    scopeFunctionsDemo()
     println("=== SEALED CLASSES AND INTERFACES DEMO ===")
     
     // Sealed class example
