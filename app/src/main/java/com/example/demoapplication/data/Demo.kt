@@ -12,22 +12,16 @@ fun main() {
 
     println(res1.errorMsg)
     println(res.data.age)
-    val hulk = Collection<Hulk>(Hulk())
+    val hulk = Collection(Hulk(56))
 
-    var organism : Collection<Organism> = hulk
-
-
-
-
-
+    val organism : Collection<Organism> = hulk
+    organism.item.strength = 45
 
 }
 
-class Hulk : Organism() {
+class Hulk(override var strength: Int) : Organism(strength)
 
-}
-
-open class Organism
+open class Organism(open var strength: Int)
 
 
 
