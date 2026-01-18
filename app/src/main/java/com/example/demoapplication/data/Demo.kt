@@ -7,14 +7,55 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 // COROUTINE BUILDERS EXPLAINED
 
 fun main() {
-    val res = Result<String>()
+    val res = Result.Success<Person>(Person(23))
+    val res1 = Result.Error("Error occurred")
+
+    println(res1.errorMsg)
+    println(res.data.age)
+    val hulk = Collection<Hulk>(Hulk())
+
+    var organism : Collection<Organism> = hulk
+
+
+
+
+
 
 }
 
+class Hulk : Organism() {
 
-sealed class Result<T> {
-    class Success<T> : Result<T>()
-    class Error : Result<Nothing>()
+}
+
+open class Organism
+
+
+
+class Collection<out T>(val item: T)
+
+class Person(val age: Int)
+
+ sealed class Result<out T> {
+    class Success<T>(var data : T) : Result<T>()
+    class Error(val errorMsg : String) : Result<Nothing>()
+}
+
+
+
+
+fun fetchPerson(dataParam : String) : Result<Person> {
+    if (dataParam == "SUCCESS") {
+        return Result.Success(Person(34))
+    } else {
+        return Result.Error("Failed to fetch person data")
+    }
+}
+
+
+enum class Demo {
+    ONE,
+    TWO,
+    THREE
 }
 
 class Car private constructor(
