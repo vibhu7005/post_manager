@@ -23,8 +23,6 @@ class Hulk(override var strength: Int) : Organism(strength)
 
 open class Organism(open var strength: Int)
 
-
-
 class Collection<out T>(val item: T)
 
 class Person(val age: Int)
