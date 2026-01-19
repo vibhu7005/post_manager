@@ -6,7 +6,7 @@ import kotlin.reflect.KProperty
 
 fun main() {
 //    println("=== Using getValue and setValue (Delegated Properties) ===")
-    println("Adi".lambai())
+    println("Adui".length())
     
 //    // Using 'by' keyword - getValue is called when reading
 //    var box by Box(10)  // Note: must be 'var' to use setValue
@@ -62,7 +62,7 @@ class Box(var value: Int) {
 }
 
 
-fun String.lambai() : Int {
+fun String.length(): Int {
     return this.length
 }
 
