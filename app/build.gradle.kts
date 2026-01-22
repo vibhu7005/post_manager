@@ -33,6 +33,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+        freeCompilerArgs += listOf("-Xnested-type-aliases")
     }
     buildFeatures {
         compose = true
