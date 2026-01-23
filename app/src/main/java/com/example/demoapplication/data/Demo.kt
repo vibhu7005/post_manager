@@ -1,6 +1,8 @@
 package com.example.demoapplication.data
 
 import kotlin.reflect.KProperty
+import kotlin.properties.ReadWriteProperty
+import kotlin.properties.Delegates
 
 fun main() {
     val p = Person(34)
@@ -58,6 +60,12 @@ fun main() {
     
     println("\n=== BACKING PROPERTY PATTERN ===")
     demonstrateBackingPropertyPattern()
+    
+    println("\n=== BACKING PROPERTY vs FIELD ===")
+    demonstrateBackingPropertyVsField()
+    
+    println("\n=== DELEGATION USECASE ===")
+    demonstrateDelegationUseCase()
 }
 
 fun testUserCode() {
@@ -192,6 +200,90 @@ fun demonstrateBackingPropertyPattern() {
     println("6. ✅ CONTROL - Full control over property access")
     println()
     println("Most common use: Android ViewModels for state management!")
+}
+
+fun demonstrateBackingPropertyVsField() {
+    println("\n=== BACKING PROPERTY vs YOUR EXAMPLE ===")
+    
+    println("=== Your Example (REDUNDANT) ===")
+    
+    class PersonRedundant {
+        var name: String = ""
+            get() = field
+            set(value) {
+                field = value
+            }
+    }
+    
+    val person1 = PersonRedundant()
+    person1.name = "John"
+    println("Name: ${person1.name}")
+    
+    // ❌ This is EXACTLY the same as:
+    class PersonSimple {
+        var name: String = ""  // Same thing!
+    }
+    
+    println("✅ Your example works, but adds NO value")
+    println("❌ It's redundant - same as just: var name: String = \"\"")
+    
+    println("\n=== When Your Pattern Makes Sense (With Logic) ===")
+    
+    class PersonWithLogic {
+        var name: String = ""
+            get() = field.uppercase()  // ✅ Transform on get
+            set(value) {
+                field = value.trim()  // ✅ Transform on set
+            }
+    }
+    
+    val person2 = PersonWithLogic()
+    person2.name = "  john  "  // Set with spaces
+    println("Name: ${person2.name}")  // "JOHN" (trimmed and uppercase)
+    println("✅ Now it adds value - transforms the value!")
+    
+    println("\n=== Backing Property Pattern (Different Purpose!) ===")
+    
+    class PersonWithBackingProperty {
+        private var _name: String = ""  // Private mutable
+        
+        val name: String  // ✅ Public READ-ONLY
+            get() = _name
+        
+        fun setName(newName: String) {
+            require(newName.isNotBlank()) { "Name cannot be blank" }
+            _name = newName
+        }
+    }
+    
+    val person3 = PersonWithBackingProperty()
+    
+    // ✅ Can read
+    println("Name: ${person3.name}")
+    
+    // ❌ Can't write directly!
+    // person3.name = "John"  // ERROR: Val cannot be reassigned
+    
+    // ✅ Must use method
+    person3.setName("John")
+    println("Name: ${person3.name}")  // "John"
+    
+    println("\n=== KEY DIFFERENCE ===")
+    println("Your example:")
+    println("  - var name (mutable) - can read AND write")
+    println("  - ❌ Redundant - same as simple var")
+    println()
+    println("Backing property pattern:")
+    println("  - val name (read-only) - can ONLY read")
+    println("  - private var _name (mutable internally)")
+    println("  - ✅ Different purpose - read-only public API")
+    println()
+    println("Use your pattern ONLY when you add logic:")
+    println("  - Transform value (uppercase, trim)")
+    println("  - Validate value")
+    println("  - Log changes")
+    println()
+    println("Otherwise, just use: var name: String = \"\"")
 }
 
 fun demonstrateGetOperator() {
@@ -577,5 +669,108 @@ sealed class ResultType<out T> {
     data class Success<T>(val data: T) : ResultType<T>()
     data class Error(val message: String) : ResultType<Nothing>()  // ← Nothing!
     object Loading : ResultType<Nothing>()                          // ← Nothing!
+}
+
+// ============================================================================
+// DELEGATION USECASE DEMONSTRATION
+// ============================================================================
+
+// Simplified SharedPreferences for demo
+class SimplePreferences {
+    private val data = mutableMapOf<String, Any>()
+    
+    fun getString(key: String, defaultValue: String): String {
+        return data[key] as? String ?: defaultValue
+    }
+    
+    fun putString(key: String, value: String) {
+        data[key] = value
+        println("Saved to preferences: $key = $value")
+    }
+    
+    fun getInt(key: String, defaultValue: Int): Int {
+        return data[key] as? Int ?: defaultValue
+    }
+    
+    fun putInt(key: String, value: Int) {
+        data[key] = value
+        println("Saved to preferences: $key = $value")
+    }
+}
+
+// Delegate extension function
+fun <T> SimplePreferences.delegate(
+    defaultValue: T,
+    getter: (String, T) -> T,
+    setter: (String, T) -> Unit
+): ReadWriteProperty<Any?, T> {
+    return object : ReadWriteProperty<Any?, T> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+            return getter(property.name, defaultValue)
+        }
+        
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+            setter(property.name, value)
+        }
+    }
+}
+
+fun demonstrateDelegationUseCase() {
+    println("=== Problem: Without Delegation ===")
+    
+    // ❌ Without delegation - lots of boilerplate
+    class UserWithoutDelegation(private val prefs: SimplePreferences) {
+        fun getUsername(): String {
+            return prefs.getString("username", "")
+        }
+        
+        fun setUsername(value: String) {
+            prefs.putString("username", value)
+        }
+    }
+    
+    val user1 = UserWithoutDelegation(SimplePreferences())
+    user1.setUsername("John")
+    val name1 = user1.getUsername()
+    println("Username: $name1")
+    println("❌ Verbose - need get/set methods")
+    
+    println("\n=== Solution: With Delegation ===")
+    
+    // ✅ With delegation - clean and simple!
+    class UserWithDelegation(private val prefs: SimplePreferences) {
+        var username: String by prefs.delegate(
+            defaultValue = "",
+            getter = { key, default -> prefs.getString(key, default) },
+            setter = { key, value -> prefs.putString(key, value) }
+        )
+        
+        var age: Int by prefs.delegate(
+            defaultValue = 0,
+            getter = { key, default -> prefs.getInt(key, default) },
+            setter = { key, value -> prefs.putInt(key, value) }
+        )
+    }
+    
+    val user2 = UserWithDelegation(SimplePreferences())
+    user2.username = "John"  // ✅ Clean - automatically saves!
+    val name2 = user2.username  // ✅ Clean - automatically loads!
+    println("Username: $name2")
+    
+    user2.age = 25  // ✅ Automatically saves to preferences
+    println("Age: ${user2.age}")
+    
+    println("\n=== Key Benefits ===")
+    println("1. ✅ Less boilerplate - no get/set methods needed")
+    println("2. ✅ Cleaner API - use properties like normal variables")
+    println("3. ✅ Automatic persistence - saves/loads automatically")
+    println("4. ✅ Type-safe - compiler ensures correct types")
+    println("5. ✅ Reusable - create delegate once, use for many properties")
+    
+    println("\n=== How It Works ===")
+    println("When you write: var username: String by prefs.delegate(...)")
+    println("Kotlin automatically generates get/set that call your delegate")
+    println("So: user.username = 'John' automatically calls prefs.putString()")
+    println("And: val name = user.username automatically calls prefs.getString()")
 }
 
