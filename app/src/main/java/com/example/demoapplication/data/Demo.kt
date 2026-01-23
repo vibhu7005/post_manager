@@ -46,6 +46,59 @@ fun main() {
     
     println("\n=== PRACTICAL USES OF NOTHING TYPE ===")
     demonstrateNothingType()
+    
+    println("\n=== COMPARETO AND OVERRIDE ===")
+    demonstrateCompareToOverride()
+    
+    println("\n=== COMPARABLE vs NO COMPARABLE ===")
+    demonstrateComparableVsNoComparable()
+    
+    println("\n=== YOUR CODE TEST - Does it work? ===")
+    testUserCode()
+}
+
+fun testUserCode() {
+    println("=== Testing Your Exact Code ===")
+    
+    // Your exact code
+    class Money(val x: Int, val currency: String = "USD") {
+        operator fun compareTo(other: Money): Int {
+            return x.compareTo(other.x)
+        }
+    }
+    
+    val RajMoney = Money(100)
+    val RamMoney = Money(20)
+    
+    // ✅ YES! This DOES work!
+    if (RajMoney < RamMoney) {
+        println("Raj has less money than Ram")
+    } else {
+        println("Raj has more or equal money than Ram")
+    }
+    // Output: "Raj has more or equal money than Ram"
+    
+    println("\n=== CORRECTED UNDERSTANDING ===")
+    println("✅ Comparison operators (<, >, <=, >=) WORK without Comparable!")
+    println("✅ They only need operator fun compareTo()")
+    println()
+    println("❌ BUT sorted(), min(), max() require Comparable")
+    
+    val list = listOf(RamMoney, RajMoney, Money(50))
+    // val sorted = list.sorted()  // ERROR: No Comparable implementation
+    
+    println("\n=== So When Do You Need Comparable? ===")
+    println("You need Comparable IF you want to use:")
+    println("1. list.sorted()")
+    println("2. list.min()")
+    println("3. list.max()")
+    println("4. list.sortedDescending()")
+    println()
+    println("For just comparison operators (<, >, etc.), Comparable is OPTIONAL!")
+    println("But it's still RECOMMENDED for:")
+    println("- Type safety")
+    println("- Standard convention")
+    println("- Future-proofing (if you need sorted() later)")
 }
 
 fun demonstrateGetOperator() {
@@ -211,6 +264,137 @@ fun demonstrateNothingType() {
 }
 
 fun getValueFromCache(key: String): String? = null
+
+// ============================================================================
+// COMPARETO AND OVERRIDE EXPLANATION
+// ============================================================================
+
+fun demonstrateCompareToOverride() {
+    println("\n=== COMPARETO: Why Override is Required ===")
+    
+    // ❌ WRONG: Without implementing Comparable
+    class MoneyWrong(val amount: Int) {
+        // This won't enable comparison operators!
+        operator fun compareTo(other: MoneyWrong): Int {
+            return amount.compareTo(other.amount)
+        }
+    }
+    
+    val m1Wrong = MoneyWrong(100)
+    val m2Wrong = MoneyWrong(50)
+    
+    // ❌ This won't compile - comparison operators don't work!
+    // val result = m1Wrong < m2Wrong  // Error!
+    
+    // ✅ This works (direct function call only)
+    val comparison = m1Wrong.compareTo(m2Wrong)
+    println("Direct compareTo call: $comparison")
+    
+    // ✅ CORRECT: Implementing Comparable interface
+    class Money(val amount: Int) : Comparable<Money> {
+        // ✅ MUST use 'override' - compareTo is from Comparable interface
+        override operator fun compareTo(other: Money): Int {
+            return amount.compareTo(other.amount)
+        }
+    }
+    
+    val m1 = Money(100)
+    val m2 = Money(50)
+    val m3 = Money(150)
+    
+    // ✅ Now comparison operators work!
+    println("m1 > m2: ${m1 > m2}")      // true
+    println("m1 < m2: ${m1 < m2}")      // false
+    println("m1 >= m2: ${m1 >= m2}")    // true
+    println("m1 <= m2: ${m1 <= m2}")    // false
+    
+    // ✅ Works with sorting
+    val moneyList = listOf(m2, m1, m3)
+    val sorted = moneyList.sorted()
+    println("Sorted: ${sorted.map { it.amount }}")  // [50, 100, 150]
+    
+    println("\n=== Why Override is Required ===")
+    println("1. compareTo() is defined in Comparable<T> interface")
+    println("2. When implementing Comparable<Money>, you override compareTo()")
+    println("3. Kotlin REQUIRES 'override' keyword for interface methods")
+    println("4. Without Comparable, comparison operators (<, >, <=, >=) don't work")
+    println("5. Only direct compareTo() call works without Comparable")
+}
+
+fun demonstrateComparableVsNoComparable() {
+    println("=== WITHOUT Comparable (NOT RECOMMENDED) ===")
+    
+    // ❌ Without Comparable
+    class MoneyWithoutComparable(val amount: Int) {
+        operator fun compareTo(other: MoneyWithoutComparable): Int {
+            return amount.compareTo(other.amount)
+        }
+    }
+    
+    val m1No = MoneyWithoutComparable(100)
+    val m2No = MoneyWithoutComparable(50)
+    
+    // ✅ Direct compareTo() works
+    val comparison = m1No.compareTo(m2No)
+    println("Direct compareTo(): $comparison")
+    
+    // ❌ Comparison operators DON'T work!
+    // val result = m1No < m2No  // ERROR: Unresolved reference
+    
+    // ❌ sorted() doesn't work!
+    val listNo = listOf(m2No, m1No)
+    // val sorted = listNo.sorted()  // ERROR: No Comparable implementation
+    
+    println("❌ Limited - only direct compareTo() works")
+    
+    println("\n=== WITH Comparable (RECOMMENDED) ✅ ===")
+    
+    // ✅ With Comparable
+    class MoneyWithComparable(val amount: Int) : Comparable<MoneyWithComparable> {
+        override operator fun compareTo(other: MoneyWithComparable): Int {
+            return amount.compareTo(other.amount)
+        }
+    }
+    
+    val m1Yes = MoneyWithComparable(100)
+    val m2Yes = MoneyWithComparable(50)
+    val m3Yes = MoneyWithComparable(150)
+    
+    // ✅ Direct compareTo() works
+    println("Direct compareTo(): ${m1Yes.compareTo(m2Yes)}")
+    
+    // ✅ Comparison operators WORK!
+    println("m1 > m2: ${m1Yes > m2Yes}")      // true
+    println("m1 < m2: ${m1Yes < m2Yes}")      // false
+    println("m1 >= m2: ${m1Yes >= m2Yes}")    // true
+    
+    // ✅ sorted() works!
+    val listYes = listOf(m2Yes, m1Yes, m3Yes)
+    val sorted = listYes.sorted()
+    println("Sorted: ${sorted.map { it.amount }}")  // [50, 100, 150]
+    
+    // ✅ min() and max() work!
+    val min = listYes.min()
+    val max = listYes.max()
+    println("Min: ${min.amount}, Max: ${max.amount}")
+    
+    println("✅ Full functionality - all comparison features work!")
+    
+    println("\n=== COMPARISON TABLE ===")
+    println("┌─────────────────────┬──────────────┬──────────────┐")
+    println("│ Feature              │ No Comparable│ With Comparable│")
+    println("├─────────────────────┼──────────────┼──────────────┤")
+    println("│ compareTo() call     │      ✅      │      ✅      │")
+    println("│ <, >, <=, >= ops    │      ❌      │      ✅      │")
+    println("│ sorted()             │      ❌      │      ✅      │")
+    println("│ min(), max()        │      ❌      │      ✅      │")
+    println("│ Type safety         │      ❌      │      ✅      │")
+    println("└─────────────────────┴──────────────┴──────────────┘")
+    
+    println("\n=== ANSWER ===")
+    println("YES! Always prefer implementing Comparable<T>")
+    println("It enables comparison operators and standard library functions")
+}
 
 class Person(val strength: Int) {
     // PLUS operator - uses + sign
