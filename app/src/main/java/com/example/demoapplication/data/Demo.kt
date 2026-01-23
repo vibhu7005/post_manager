@@ -55,6 +55,9 @@ fun main() {
     
     println("\n=== YOUR CODE TEST - Does it work? ===")
     testUserCode()
+    
+    println("\n=== BACKING PROPERTY PATTERN ===")
+    demonstrateBackingPropertyPattern()
 }
 
 fun testUserCode() {
@@ -99,6 +102,96 @@ fun testUserCode() {
     println("- Type safety")
     println("- Standard convention")
     println("- Future-proofing (if you need sorted() later)")
+}
+
+fun demonstrateBackingPropertyPattern() {
+    println("\n=== BACKING PROPERTY PATTERN ===")
+    
+    println("=== Why Use: private var _value + public var value? ===")
+    
+    // Example 1: Validation
+    class User {
+        private var _age: Int = 0
+        var age: Int
+            get() = _age
+            set(newValue) {
+                require(newValue >= 0) { "Age cannot be negative" }
+                require(newValue <= 150) { "Age cannot exceed 150" }
+                _age = newValue
+            }
+    }
+    
+    val user = User()
+    user.age = 25
+    println("Age: ${user.age}")  // 25
+    
+    try {
+        user.age = -5  // ❌ Throws exception
+    } catch (e: IllegalArgumentException) {
+        println("Validation: ${e.message}")  // "Age cannot be negative"
+    }
+    
+    println("\n=== Example 2: Read-Only Public API ===")
+    
+    class DataManager {
+        private var _data: List<String> = emptyList()
+        
+        // Public can READ but not WRITE
+        val data: List<String>
+            get() = _data.toList()  // Return copy
+        
+        fun loadData() {
+            _data = listOf("Item1", "Item2", "Item3")
+        }
+    }
+    
+    val manager = DataManager()
+    manager.loadData()
+    println("Data: ${manager.data}")  // Can read
+    
+    // manager.data.add("New")  // ❌ ERROR: data is read-only
+    
+    println("\n=== Example 3: Android ViewModel Pattern ===")
+    
+    class CounterViewModel {
+        private var _count: Int = 0
+        private val observers = mutableListOf<(Int) -> Unit>()
+        
+        val count: Int
+            get() = _count
+        
+        fun increment() {
+            _count++
+            notifyObservers()
+        }
+        
+        private fun notifyObservers() {
+            observers.forEach { it(_count) }
+        }
+        
+        fun observe(observer: (Int) -> Unit) {
+            observers.add(observer)
+            observer(_count)
+        }
+    }
+    
+    val viewModel = CounterViewModel()
+    viewModel.observe { count ->
+        println("Count changed to: $count")
+    }
+    
+    viewModel.increment()  // Triggers observer
+    viewModel.increment()  // Triggers observer
+    
+    println("\n=== KEY REASONS TO USE THIS PATTERN ===")
+    println("1. ✅ VALIDATION - Check values before setting")
+    println("2. ✅ READ-ONLY API - Public read, private write")
+    println("3. ✅ OBSERVABILITY - Trigger callbacks on changes")
+    println("4. ✅ LOGGING - Track value changes")
+    println("5. ✅ ENCAPSULATION - Hide internal implementation")
+    println("6. ✅ CONTROL - Full control over property access")
+    println()
+    println("Most common use: Android ViewModels for state management!")
 }
 
 fun demonstrateGetOperator() {
