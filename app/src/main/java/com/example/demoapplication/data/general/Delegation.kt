@@ -6,32 +6,39 @@ package com.example.demoapplication.data.general
 // OPTION 1: Use Standard Delegates (Delegates - plural, with 's')
 // ============================================================================
 
-interface HuntingBehaviour {
+interface HuntingAnimal {
     fun hunt()
 }
 
-interface EatingBehaviour {
-    fun eat()
+interface HuntingBehaviour {
+    fun doHunt()
 }
 
-class Lion : HuntingBehaviour, EatingBehaviour {
+class Tiger : HuntingAnimal {
+    private val huntingBehaviour = object : HuntingBehaviour {
+        override fun doHunt() {
+            println("Tiger is hunting")
+        }
+
+    }
     override fun hunt() {
-        println("Lion is hunting")
-    }
-
-    override fun eat() {
-        println("Lion is eating")
+        huntingBehaviour.doHunt()
     }
 }
 
-class Cat : EatingBehaviour {
-    override fun eat() {
-        println("Cat is eating")
-    }
+
+class TigerHunterMananger(val tiger : Tiger) : HuntingAnimal by tiger {
 }
 
-class AnimalManager(hunting : HuntingBehaviour, eating : EatingBehaviour) : HuntingBehaviour by hunting,
-    EatingBehaviour by eating
+class Cat : Animal() {
+
+}
+
+
+open class Animal {
+}
+
+
 
 
 fun main() {
