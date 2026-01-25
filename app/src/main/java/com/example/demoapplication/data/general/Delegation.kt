@@ -4,9 +4,6 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 
-// ============================================================================
-// OPTION 1: Use Standard Delegates (Delegates - plural, with 's')
-// ============================================================================
 
 interface HuntingAnimal {
     fun hunt()
