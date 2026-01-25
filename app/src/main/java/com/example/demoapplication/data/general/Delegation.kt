@@ -1,5 +1,7 @@
 package com.example.demoapplication.data.general
 
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 
 // ============================================================================
@@ -170,143 +172,129 @@ class ObservableDelegate<T>(
         value = newValue
         onChange(oldValue, newValue)
     }
-}
 
-class Settings {
-    var theme: String by ObservableDelegate("light") { old, new ->
-        println("🎨 Theme changed: $old -> $new")
-        // Could trigger UI update, save to preferences, etc.
-    }
-
-    var language: String by ObservableDelegate("en") { old, new ->
-        println("🌐 Language changed: $old -> $new")
-        // Could reload strings, update UI, etc.
-    }
-}
 
 // BENEFIT 5: THREAD-SAFETY - Automatic synchronization
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
-class ThreadSafeDelegate<T>(private var value: T) {
-    private val lock = ReentrantLock()
+    class ThreadSafeDelegate<T>(private var value: T) {
+        private val lock = ReentrantLock()
 
-    operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): T {
-        return lock.withLock { value }
-    }
-
-    operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, newValue: T) {
-        lock.withLock { value = newValue }
-    }
-}
-
-class SharedCounter {
-    // Automatically thread-safe without writing synchronized blocks everywhere
-    var count: Int by ThreadSafeDelegate(0)
-}
-
-// BENEFIT 6: FORMATTING/TRANSFORMATION - Automatic data transformation
-class UppercaseDelegate(private var value: String) {
-    operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String {
-        return value
-    }
-
-    operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, newValue: String) {
-        value = newValue.uppercase().trim()
-    }
-}
-
-class FormData {
-    // Automatically converts to uppercase and trims whitespace
-    var code: String by UppercaseDelegate("")
-}
-
-// BENEFIT 7: LAZY INITIALIZATION - Only compute when needed
-class LazyDelegate<T>(private val initializer: () -> T) {
-    private var value: T? = null
-
-    operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): T {
-        if (value == null) {
-            value = initializer()
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): T {
+            return lock.withLock { value }
         }
-        return value!!
+
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, newValue: T) {
+            lock.withLock { value = newValue }
+        }
     }
-}
 
-class DatabaseConnection {
-    // Connection only created when first accessed
-    val connection: String by LazyDelegate {
-        println("🔌 Establishing database connection...")
-        "Connected to DB"
+    class SharedCounter {
+        // Automatically thread-safe without writing synchronized blocks everywhere
+        var count: Int by ThreadSafeDelegate(0)
     }
-}
 
+    // BENEFIT 6: FORMATTING/TRANSFORMATION - Automatic data transformation
+    class UppercaseDelegate(private var value: String) {
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String {
+            return value
+        }
 
-
-fun main() {
-    println("=".repeat(60))
-    println("1. SIMPLE DELEGATE (Not very useful)")
-    println("=".repeat(60))
-    val example = Example()
-    println(example.value) // Calls getValue()
-    example.value = "New Value" // Calls setValue()
-    println(example.value) // Calls getValue() again
-    
-    println("\n" + "=".repeat(60))
-    println("2. REUSABILITY - Same logic for multiple properties")
-    println("=".repeat(60))
-    val user = User()
-    user.name = "John"
-    user.email = "john@example.com"
-    user.age = 30
-    println("User: ${user.name}, ${user.email}, ${user.age}")
-    
-    println("\n" + "=".repeat(60))
-    println("3. VALIDATION - Automatic business rule enforcement")
-    println("=".repeat(60))
-    val product = Product()
-    try {
-        product.name = "AB" // Too short - will throw exception
-    } catch (e: IllegalArgumentException) {
-        println("❌ Validation error: ${e.message}")
+        operator fun setValue(
+            thisRef: Any?,
+            property: kotlin.reflect.KProperty<*>,
+            newValue: String
+        ) {
+            value = newValue.uppercase().trim()
+        }
     }
-    product.name = "Valid Product Name"
-    println("✅ Product name set: ${product.name}")
-    
-    println("\n" + "=".repeat(60))
-    println("4. CACHING - Expensive operations cached")
-    println("=".repeat(60))
-    val processor = DataProcessor()
-    println("First access (will compute):")
-    val start1 = System.currentTimeMillis()
-    println(processor.expensiveResult)
-    println("Time: ${System.currentTimeMillis() - start1}ms")
-    
-    println("\nSecond access (cached, instant):")
-    val start2 = System.currentTimeMillis()
-    println(processor.expensiveResult)
-    println("Time: ${System.currentTimeMillis() - start2}ms")
-    
-    println("\n" + "=".repeat(60))
-    println("5. OBSERVABLE - React to changes automatically")
-    println("=".repeat(60))
-    val settings = Settings()
-    settings.theme = "dark"
-    settings.language = "fr"
-    
-    println("\n" + "=".repeat(60))
-    println("6. FORMATTING - Automatic data transformation")
-    println("=".repeat(60))
-    val form = FormData()
-    form.code = "  hello world  "
-    println("Code stored as: '${form.code}'") // Automatically uppercased and trimmed
-    
-    println("\n" + "=".repeat(60))
-    println("7. LAZY INITIALIZATION - Only compute when needed")
-    println("=".repeat(60))
-    val db = DatabaseConnection()
-    println("Database object created, but connection not yet established...")
-    println("Accessing connection now:")
-    println(db.connection)
+
+    class FormData {
+        // Automatically converts to uppercase and trims whitespace
+        var code: String by UppercaseDelegate("")
+    }
+
+    // BENEFIT 7: LAZY INITIALIZATION - Only compute when needed
+    class LazyDelegate<T>(private val initializer: () -> T) {
+        private var value: T? = null
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): T {
+            if (value == null) {
+                value = initializer()
+            }
+            return value!!
+        }
+    }
+
+    class DatabaseConnection {
+        // Connection only created when first accessed
+        val connection: String by LazyDelegate {
+            println("🔌 Establishing database connection...")
+            "Connected to DB"
+        }
+    }
+
+
+    fun main() {
+        println("=".repeat(60))
+        println("1. SIMPLE DELEGATE (Not very useful)")
+        println("=".repeat(60))
+        val example = Example()
+        println(example.value) // Calls getValue()
+        example.value = "New Value" // Calls setValue()
+        println(example.value) // Calls getValue() again
+
+        println("\n" + "=".repeat(60))
+        println("2. REUSABILITY - Same logic for multiple properties")
+        println("=".repeat(60))
+        val user = User()
+        user.name = "John"
+        user.email = "john@example.com"
+        user.age = 30
+        println("User: ${user.name}, ${user.email}, ${user.age}")
+
+        println("\n" + "=".repeat(60))
+        println("3. VALIDATION - Automatic business rule enforcement")
+        println("=".repeat(60))
+        val product = Product()
+        try {
+            product.name = "AB" // Too short - will throw exception
+        } catch (e: IllegalArgumentException) {
+            println("❌ Validation error: ${e.message}")
+        }
+        product.name = "Valid Product Name"
+        println("✅ Product name set: ${product.name}")
+
+        println("\n" + "=".repeat(60))
+        println("4. CACHING - Expensive operations cached")
+        println("=".repeat(60))
+        val processor = DataProcessor()
+        println("First access (will compute):")
+        val start1 = System.currentTimeMillis()
+        println(processor.expensiveResult)
+        println("Time: ${System.currentTimeMillis() - start1}ms")
+
+        println("\nSecond access (cached, instant):")
+        val start2 = System.currentTimeMillis()
+        println(processor.expensiveResult)
+        println("Time: ${System.currentTimeMillis() - start2}ms")
+
+        println("\n" + "=".repeat(60))
+        println("5. OBSERVABLE - React to changes automatically")
+        println("=".repeat(60))
+        println("\n" + "=".repeat(60))
+        println("6. FORMATTING - Automatic data transformation")
+        println("=".repeat(60))
+        val form = FormData()
+        form.code = "  hello world  "
+        println("Code stored as: '${form.code}'") // Automatically uppercased and trimmed
+
+        println("\n" + "=".repeat(60))
+        println("7. LAZY INITIALIZATION - Only compute when needed")
+        println("=".repeat(60))
+        val db = DatabaseConnection()
+        println("Database object created, but connection not yet established...")
+        println("Accessing connection now:")
+        println(db.connection)
+    }
 }
 
