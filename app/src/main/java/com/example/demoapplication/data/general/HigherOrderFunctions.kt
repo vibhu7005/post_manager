@@ -30,18 +30,31 @@ fun main() {
     println(evaluate(3, 4, { a, b -> a + b }))
     val x = multiply()
     val z = x(4)
+
+    "df".also {  }
     println(z(3))
 
     val lambda = { a: Int -> a * a }
-    println(operate(3, 4, { a, b -> a + b }))
 
-    println(operate(4,7, ::add))
+
+    val result = "Madam".applySelf {
+        lowercase()
+    }
+    println(result)
 }
+
+fun <T,E> T.letSelf(block : (T) -> E) = block(this)
+
+
+fun <T> T.alsoSelf(block : (T) -> T) = block(this)
+
+fun <T, E> T.runSelf(block :  T.() -> E ) = block(this)
+
+
+
+fun <T> T.applySelf(block : T.() -> T) = block(this)
 
 fun add(a: Int, b: Int): Int {
     return a + b
 }
 
-fun operate(a: Int, b: Int, operation: (Int, Int) -> Int): Int {
-    return operation(a, b)
-}
