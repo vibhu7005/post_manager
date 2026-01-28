@@ -1,60 +1,28 @@
-package com.example.demoapplication.data.general
 
-
-fun <T> List<T>.filter(condition: (T) -> Boolean): List<T> {
-    val list = mutableListOf<T>()
-    for (item in this) {
-        if (condition(item)) list.add(item)
-    }
-    return list
-}
-
-fun getOperation(name: String): (Int, Int) -> Int {
-    return when (name) {
-        "add" -> { a, b -> a + b }
-        "subtract" -> { a, b -> a - b }
-        else -> { x, y -> 0 }
-    }
-}
-
-fun multiply(): (Int) -> (Int) -> Int {
-    return { a -> { b -> a * b } }
-}
-
-inline fun evaluate(numA: Int, numB: Int, operation: (Int, Int) -> Int) = operation(numA, numB)
 
 fun main() {
-    val list = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)
-    val evenNumbers = list.filter { a -> a % 2 == 0 }
-    println(evenNumbers)
-    println(evaluate(3, 4, { a, b -> a + b }))
-    val x = multiply()
-    val z = x(4)
-
-    "df".also {  }
-    println(z(3))
-
-    val lambda = { a: Int -> a * a }
-
-
-    val result = "Madam".applySelf {
-        lowercase()
-    }
-    println(result)
+    processRecords("Charlie", "Aman", "Bob", "David")
 }
 
-fun <T,E> T.letSelf(block : (T) -> E) = block(this)
+fun processRecords(vararg names: String) {
+    for (record in names) {
+        execute(record) {
+            if (record == "Bob") {
+                return@processRecords
+            }
+            saveRecord(record)
+        }
+    }
+}
 
+inline fun execute(name: String, block: () -> Unit) {
+    val startTime = System.currentTimeMillis()
+    block()
+    val endTime = System.currentTimeMillis()
+    println("Execution time for $name: ${endTime - startTime} ms")
+}
 
-fun <T> T.alsoSelf(block : (T) -> T) = block(this)
-
-fun <T, E> T.runSelf(block :  T.() -> E ) = block(this)
-
-
-
-fun <T> T.applySelf(block : T.() -> T) = block(this)
-
-fun add(a: Int, b: Int): Int {
-    return a + b
+fun saveRecord(name: String) {
+    println("Saving record for $name")
 }
 
