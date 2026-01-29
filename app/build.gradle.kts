@@ -63,6 +63,12 @@ dependencies {
     implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.androidx.localbroadcastmanager)
     
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx) // For viewModelScope
+    // lifecycle-runtime-ktx already included above for lifecycleScope
+    
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation(libs.litert.api)
