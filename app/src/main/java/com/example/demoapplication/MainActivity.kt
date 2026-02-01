@@ -9,17 +9,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 class MainActivity : ComponentActivity() {
-    lateinit var textView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        textView = findViewById(androidx.compose.ui.R.id.hide_in_inspector_tag)
 
-
+//        textView = findViewById(androidx.compose.ui.R.id.hide_in_inspector_tag)
+        lifecycleScope.launch {
+            exec()
+            println("jerry")
+        }
         setContent {
             MaterialTheme {
                 Surface(
@@ -31,9 +40,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun updateTextView() {
-        textView.text = " dde"
+
+    suspend fun CoroutineScope.exec() {
+        supervisorScope {
+            delay(200)
+            println("hello")
+        }
+
+        launch {
+            delay(1300)
+            println("nine")
+        }
+
     }
+
 
     fun add(a: Int, b: Int) = a + b
 }

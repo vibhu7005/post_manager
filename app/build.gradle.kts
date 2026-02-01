@@ -73,7 +73,25 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation(libs.litert.api)
 
+    // Unit Testing
     testImplementation(libs.junit)
+    
+    // MockK - Mocking library for Kotlin
+    testImplementation("io.mockk:mockk:1.13.8")
+    
+    // Coroutines Test
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    
+    // Turbine - Flow testing (optional, for Flow tests)
+    testImplementation("app.cash.turbine:turbine:1.0.0")
+    
+    // Truth - Better assertions (optional)
+    testImplementation("com.google.truth:truth:1.1.4")
+    
+    // AndroidX Test (for ViewModel testing)
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    
+    // Android Instrumented Testing
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
