@@ -18,26 +18,43 @@ import kotlinx.coroutines.withContext
 
 fun main() {
     runBlocking {
-        //  This try-catch will NOT catch the exception!
-        // Reason: launch {} is NON-BLOCKING - it returns immediately
-        // The exception happens asynchronously AFTER the try-catch completes
-        // Exception will go to CoroutineExceptionHandler or crash the app
+        // ⚠️ IMPORTANT: This SHOULD catch the exception, but there's a timing issue!
+        // When you await() a failed Deferred, the exception IS propagated
+        // BUT: You're only waiting 1000ms, while the second async takes 3000ms
+        // So the exception might not have been thrown yet when delay(1000) completes
+        
+        println("=== Testing supervisorScope with async + await ===\n")
+        
         try {
-            CoroutineScope(Job()).launch { 
-                delay(100) // Simulate some work
-                throw Exception("fdf") 
+            supervisorScope {
+                val deferred = async {
+                    println("A - Starting async that will fail")
+                    delay(100) // Simulate some work
+                    throw RuntimeException("fdf")
+                }
+                async {
+                    println("B - Starting async that takes 3 seconds")
+                    delay(3000)
+                    println("hello")
+                }.await() // This completes first (takes 3 seconds)
+                
+                println("About to await deferred (this will throw)")
+                deferred.await() // ⚠️ This WILL throw and propagate!
             }
-            println("launch() returned immediately - try-catch already completed!")
         } catch (ex : Exception) {
-            println("Exception caught: ${ex.message}") // This will NEVER execute
+            println("✅ Exception caught: ${ex.message}") // This SHOULD execute!
         }
-        delay(1000)
+        
+        // ⚠️ ISSUE: delay(1000) is too short!
+        // The second async takes 3000ms, so you need to wait longer
+        // OR the exception is thrown but you're not waiting long enough to see it
+        delay(5000) // Wait long enough for everything to complete
     }
     
-    // To see examples of how to properly handle launch exceptions, run:
-    // exampleL1_WhyTryCatchDoesntWorkWithLaunch()
-    // exampleL2_UsingExceptionHandler()
-    // exampleL4_UsingCoroutineScope()
+    // To see examples explaining async + await behavior, run:
+    // exampleAsyncAwait1_SupervisorScopeWithAwait()
+    // exampleAsyncAwait2_WhyItWorks()
+    // exampleAsyncAwait3_TimingIssue()
 }
 
 /**
@@ -215,6 +232,320 @@ fun exampleL5_UsingSupervisorScope() {
         }
         
         delay(300)
+    }
+}
+
+// Example SupervisorScope1: Why try-catch doesn't work with supervisorScope
+fun exampleSupervisorScope1_WhyTryCatchDoesntWork() {
+    runBlocking {
+        println("=== SupervisorScope Example 1: Why try-catch doesn't work ===\n")
+        
+        println("❌ Try-catch with supervisorScope:")
+        try {
+            supervisorScope {
+                launch {
+                    delay(100)
+                    throw RuntimeException("Exception in launch")
+                }
+            }
+            println("✓ supervisorScope completed successfully")
+            println("  (Exception was ISOLATED, not propagated)")
+        } catch (ex: Exception) {
+            println("✗ This catch block will NEVER execute: ${ex.message}")
+        }
+        
+        delay(500)
+        println("\nKey Point: supervisorScope ISOLATES failures - it doesn't throw exceptions!")
+        println("The exception is isolated and doesn't propagate to the try-catch\n")
+    }
+}
+
+// Example SupervisorScope2: Using exception handler with supervisorScope
+fun exampleSupervisorScope2_UsingExceptionHandler() {
+    runBlocking {
+        println("=== SupervisorScope Example 2: Using Exception Handler ===\n")
+        
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            println("✓ Exception caught by handler: ${throwable.message}")
+        }
+        
+        // ✅ CORRECT: Use exception handler to catch exceptions in supervisorScope
+        supervisorScope {
+            launch(exceptionHandler) {
+                delay(100)
+                throw RuntimeException("Exception in launch")
+            }
+            delay(200)
+            println("supervisorScope continues (exception was isolated)")
+        }
+        
+        delay(300)
+        println("Result: Exception was handled by CoroutineExceptionHandler\n")
+    }
+}
+
+// Example SupervisorScope3: Using coroutineScope (exceptions DO propagate)
+fun exampleSupervisorScope3_UsingCoroutineScope() {
+    runBlocking {
+        println("=== SupervisorScope Example 3: coroutineScope vs supervisorScope ===\n")
+        
+        println("✅ Using coroutineScope (exceptions PROPAGATE):")
+        try {
+            coroutineScope {
+                launch {
+                    delay(100)
+                    throw RuntimeException("Exception in launch")
+                }
+            }
+        } catch (ex: Exception) {
+            println("✓ Exception caught by try-catch: ${ex.message}")
+        }
+        
+        delay(200)
+        
+        println("\n❌ Using supervisorScope (exceptions DON'T propagate):")
+        try {
+            supervisorScope {
+                launch {
+                    delay(100)
+                    throw RuntimeException("Exception in launch")
+                }
+            }
+            println("✓ supervisorScope completed (exception was isolated)")
+        } catch (ex: Exception) {
+            println("✗ This won't catch: ${ex.message}")
+        }
+        
+        delay(500)
+        println("\nKey Difference:")
+        println("  coroutineScope: Exceptions propagate → try-catch WORKS")
+        println("  supervisorScope: Exceptions isolated → try-catch DOESN'T work\n")
+    }
+}
+
+// ============================================================================
+// ASYNC + AWAIT IN SUPERVISORSCOPE - IMPORTANT DISTINCTION!
+// ============================================================================
+
+/**
+ * CRITICAL UNDERSTANDING: async + await() BEHAVIOR
+ * 
+ * Key Point: When you await() a failed Deferred, await() THROWS the exception!
+ * This exception IS propagated, even in supervisorScope!
+ * 
+ * Difference:
+ * - launch {} exceptions: Don't propagate (isolated)
+ * - async {} exceptions WITHOUT await(): Don't propagate (stay in Deferred)
+ * - async {} exceptions WITH await(): DO propagate (await() throws)
+ */
+
+// Example AsyncAwait1: supervisorScope with async + await (SHOULD catch!)
+fun exampleAsyncAwait1_SupervisorScopeWithAwait() {
+    runBlocking {
+        println("=== AsyncAwait Example 1: supervisorScope + async + await ===\n")
+        
+        println("✅ This SHOULD catch the exception!")
+        try {
+            supervisorScope {
+                val deferred = async {
+                    delay(100)
+                    throw RuntimeException("Exception in async")
+                }
+                deferred.await() // ⚠️ await() THROWS the exception!
+            }
+        } catch (ex: Exception) {
+            println("✓ Exception caught: ${ex.message}")
+        }
+        
+        println("\nKey Point: await() throws exceptions, so they propagate!\n")
+    }
+}
+
+// Example AsyncAwait2: Why await() propagates exceptions
+fun exampleAsyncAwait2_WhyItWorks() {
+    runBlocking {
+        println("=== AsyncAwait Example 2: Why await() propagates ===\n")
+        
+        println("When you call deferred.await():")
+        println("  1. If Deferred succeeded → returns result")
+        println("  2. If Deferred failed → THROWS the exception")
+        println("  3. The exception is thrown from await(), not from async")
+        println("  4. supervisorScope doesn't isolate exceptions thrown by await()")
+        println("     (It only isolates exceptions from child coroutines)\n")
+        
+        try {
+            supervisorScope {
+                val deferred = async {
+                    delay(100)
+                    throw RuntimeException("Error")
+                }
+                // await() throws here, and this exception propagates!
+                deferred.await()
+            }
+        } catch (e: Exception) {
+            println("✓ Caught: ${e.message}")
+        }
+    }
+}
+
+// Example AsyncAwait3: Timing issue in your code
+fun exampleAsyncAwait3_TimingIssue() {
+    runBlocking {
+        println("=== AsyncAwait Example 3: Timing Issue ===\n")
+        
+        println("Your code has a timing problem:")
+        println("  - Second async takes 3000ms")
+        println("  - You only wait 1000ms")
+        println("  - Exception might not have been thrown yet!\n")
+        
+        try {
+            supervisorScope {
+                val deferred1 = async {
+                    println("Deferred1: Starting (will fail in 100ms)")
+                    delay(100)
+                    throw RuntimeException("Error in deferred1")
+                }
+                
+                val deferred2 = async {
+                    println("Deferred2: Starting (takes 3000ms)")
+                    delay(3000)
+                    println("Deferred2: Completed")
+                }
+                
+                println("Awaiting deferred2 first (takes 3 seconds)...")
+                deferred2.await() // Takes 3 seconds
+                
+                println("Now awaiting deferred1 (will throw immediately)...")
+                deferred1.await() // This throws!
+            }
+        } catch (ex: Exception) {
+            println("✅ Exception caught: ${ex.message}")
+        }
+        
+        println("\nIf you only wait 1000ms, deferred2 hasn't finished yet,")
+        println("so deferred1.await() hasn't been called, so no exception yet!\n")
+    }
+}
+
+// Example AsyncAwait4: async WITHOUT await (doesn't propagate)
+fun exampleAsyncAwait4_AsyncWithoutAwait() {
+    runBlocking {
+        println("=== AsyncAwait Example 4: async WITHOUT await ===\n")
+        
+        val exceptionHandler = CoroutineExceptionHandler { _, e ->
+            println("✓ Handler caught: ${e.message}")
+        }
+        
+        println("❌ Without await(), exception doesn't propagate:")
+        try {
+            supervisorScope {
+                async {
+                    delay(100)
+                    throw RuntimeException("Error")
+                }
+                // No await() called!
+            }
+        } catch (ex: Exception) {
+            println("✗ This won't catch: ${ex.message}")
+        }
+        
+        delay(500)
+        println("Result: Exception stays in Deferred, doesn't propagate\n")
+        
+        println("✅ With await(), exception DOES propagate:")
+        try {
+            supervisorScope {
+                val deferred = async {
+                    delay(100)
+                    throw RuntimeException("Error")
+                }
+                deferred.await() // await() throws!
+            }
+        } catch (ex: Exception) {
+            println("✓ Caught: ${ex.message}")
+        }
+    }
+}
+
+// Example AsyncAwait5: Complete comparison
+fun exampleAsyncAwait5_CompleteComparison() {
+    runBlocking {
+        println("=== AsyncAwait Example 5: Complete Comparison ===\n")
+        
+        println("""
+        ┌──────────────────────────────────────────────────────────────┐
+        │  SCENARIO                    │  EXCEPTION PROPAGATES?         │
+        ├──────────────────────────────────────────────────────────────┤
+        │  launch { throw }            │  ❌ NO (isolated)              │
+        │  async { throw }             │  ❌ NO (stays in Deferred)     │
+        │  async { throw }.await()     │  ✅ YES (await() throws)       │
+        │                              │                                │
+        │  supervisorScope {           │                                │
+        │    launch { throw }          │  ❌ NO (isolated)              │
+        │    async { throw }           │  ❌ NO (stays in Deferred)    │
+        │    async { throw }.await()   │  ✅ YES (await() throws)       │
+        │  }                           │                                │
+        │                              │                                │
+        │  coroutineScope {            │                                │
+        │    launch { throw }          │  ✅ YES (propagates)          │
+        │    async { throw }.await()   │  ✅ YES (await() throws)       │
+        │  }                           │                                │
+        └──────────────────────────────────────────────────────────────┘
+        """.trimIndent())
+    }
+}
+
+// Example SupervisorScope4: Side-by-side comparison
+fun exampleSupervisorScope4_Comparison() {
+    runBlocking {
+        println("=== SupervisorScope Example 4: Complete Comparison ===\n")
+        
+        println("Scenario A: supervisorScope WITHOUT exception handler")
+        supervisorScope {
+            launch {
+                delay(100)
+                throw RuntimeException("Exception A")
+            }
+        }
+        delay(200)
+        println("Result: Exception is LOST (no handler, no propagation)\n")
+        
+        println("Scenario B: supervisorScope WITH exception handler")
+        val handler = CoroutineExceptionHandler { _, e ->
+            println("✓ Caught: ${e.message}")
+        }
+        supervisorScope {
+            launch(handler) {
+                delay(100)
+                throw RuntimeException("Exception B")
+            }
+        }
+        delay(200)
+        println("Result: Exception handled by handler\n")
+        
+        println("Scenario C: coroutineScope (exceptions propagate)")
+        try {
+            coroutineScope {
+                launch {
+                    delay(100)
+                    throw RuntimeException("Exception C")
+                }
+            }
+        } catch (e: Exception) {
+            println("✓ Caught by try-catch: ${e.message}")
+        }
+        delay(200)
+        println("Result: Exception caught by try-catch\n")
+        
+        println("""
+        ┌─────────────────────────────────────────────────────────────┐
+        │  SCOPE TYPE          │  EXCEPTION PROPAGATION │  TRY-CATCH  │
+        ├─────────────────────────────────────────────────────────────┤
+        │  coroutineScope      │  ✅ YES (propagates)   │  ✅ WORKS   │
+        │  supervisorScope    │  ❌ NO (isolates)      │  ❌ NO      │
+        │  launch (root)      │  ❌ NO (goes to handler)│  ❌ NO      │
+        └─────────────────────────────────────────────────────────────┘
+        """.trimIndent())
     }
 }
 
