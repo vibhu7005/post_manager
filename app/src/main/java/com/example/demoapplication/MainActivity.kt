@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.example.demoapplication.coroutines.coldFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -22,6 +23,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+//        CoroutineScope {
+//            coldFlow().collect {
+//                println(it)
+//            }
+//
+//            coldFlow().collect {
+//                println(it)
+//            }
+//
+//            delay(10000)
+//        }
 
 
 //        textView = findViewById(androidx.compose.ui.R.id.hide_in_inspector_tag)
