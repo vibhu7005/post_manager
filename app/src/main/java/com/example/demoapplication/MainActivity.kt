@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -55,6 +57,23 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalDemo()
                 }
             }
+        }
+    }
+
+    @Composable
+    fun BadLambda() {
+        val scope = rememberCoroutineScope()
+        LaunchedEffect(Unit) { }
+
+
+        var count by remember { mutableStateOf(0) }
+
+        Button(onClick = {
+           scope.launch {
+
+           }
+        }) {
+            Text("Count: $count")
         }
     }
 
@@ -118,7 +137,35 @@ class MainActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
+
+
+
+
+
+                @Composable
+                fun BadMutation() {
+                    var count by remember { mutableStateOf(0) }
+                    count++
+                    Text("Count: $count")
+                }
+
+
+
+                @Composable
+                fun BadRead() {
+                    var count by remember { mutableStateOf(0) }
+
+                    val displayText = if (count > 10) "High" else "Low"
+
+                    StaticComponent()  // Recomposes unnecessarily
+                }
+
+
+
+
+
+
                 Spacer(modifier = Modifier.height(8.dp))
                 // Example 1: Accessing theme
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
