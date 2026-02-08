@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -82,6 +84,11 @@ class MainActivity : ComponentActivity() {
     fun CompositionLocalDemo() {
         var currentTheme by remember { mutableStateOf("Dark") }
         var currentUser by remember { mutableStateOf<User?>(User("John Doe", "john@example.com")) }
+
+        LifecycleEventEffect(Lifecycle.Event.ON_START) {
+            println("Lifecycle ON_START - Current theme: $currentTheme, Current user: ${currentUser?.name}")
+
+        }
         
         Column(
             modifier = Modifier
