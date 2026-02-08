@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import android.widget.Toast
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.Lifecycle
@@ -88,6 +89,12 @@ class MainActivity : ComponentActivity() {
         LifecycleEventEffect(Lifecycle.Event.ON_START) {
             println("Lifecycle ON_START - Current theme: $currentTheme, Current user: ${currentUser?.name}")
 
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                println("CompositionLocalDemo disposed")
+            }
         }
         
         Column(
