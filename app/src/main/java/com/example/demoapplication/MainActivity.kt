@@ -40,6 +40,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import com.example.demoapplication.ui.compose.LocationTrackerScreen
+import com.example.demoapplication.ui.viewmodel.LocationViewModel
+import com.example.demoapplication.data.repository.LocationRepositoryImpl
+import com.example.demoapplication.data.datasource.LocationDataSource
+import com.example.demoapplication.utils.Logger
 
 // Declare CompositionLocal at top level (outside class)
 val LocalTheme = compositionLocalOf { "Light" }
@@ -48,19 +53,33 @@ val LocalUser = compositionLocalOf<User?> { null }
 data class User(val name: String, val email: String)
 
 class MainActivity : ComponentActivity() {
+    
+    private lateinit var locationViewModel: LocationViewModel
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        Logger.init(isDebug = true)
+        
+        val locationDataSource = LocationDataSource()
+        val locationRepository = LocationRepositoryImpl(locationDataSource)
+        locationViewModel = LocationViewModel(locationRepository)
 
         setContent {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    CompositionLocalDemo()
+                    LocationTrackerScreen(viewModel = locationViewModel)
                 }
             }
         }
+    }
+    
+    override fun onDestroy() {
+        locationViewModel.stopLocationTracking()
+        super.onDestroy()
     }
 
     @Composable
@@ -172,7 +191,7 @@ class MainActivity : ComponentActivity() {
 
                     val displayText = if (count > 10) "High" else "Low"
 
-                    StaticComponent()  // Recomposes unnecessarily
+//                    StaticComponent()  // Recomposes unnecessarily
                 }
 
 
@@ -239,10 +258,12 @@ class MainActivity : ComponentActivity() {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    val context = LocalContext.current
                     Button(
+
                         onClick = {
                             Toast.makeText(
-                                LocalContext.current,
+                                context,
                                 "LocalContext works!",
                                 Toast.LENGTH_SHORT
                             ).show()

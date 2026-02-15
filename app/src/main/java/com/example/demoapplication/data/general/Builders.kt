@@ -22,10 +22,11 @@ fun main() {
 
         CoroutineScope(Job()).launch {
             supervisorScope {
-                for (i in 1..10000000000000)
-                launch {
-                    delay(2000)
-                    println("A")
+                for (i in 1..10000000000000) {
+                    launch {
+                        delay(2000)
+                        println("A")
+                    }
                 }
 
                 launch {

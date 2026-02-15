@@ -33,7 +33,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
-        freeCompilerArgs += listOf("-Xnested-type-aliases")
     }
     buildFeatures {
         compose = true
@@ -72,6 +71,15 @@ dependencies {
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation(libs.litert.api)
+    
+    // Location Services
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    
+    // SSE (Server-Sent Events)
+    implementation("com.squareup.okhttp3:okhttp-sse:4.12.0")
+    
+    // Enhanced Logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Unit Testing
     testImplementation(libs.junit)
